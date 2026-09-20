@@ -11,11 +11,13 @@
     {
       devShells = each (system:
         let pkgs = import nixpkgs { inherit system; };
-        in pkgs.mkShell {
-          packages = [ pkgs.nodejs_20 pkgs.git pkgs.cocoapods pkgs.python3 pkgs.ffmpeg ];
-          shellHook = ''
-            echo "relay dev shell (node $(node --version))"
-          '';
+        in {
+          default = pkgs.mkShell {
+            packages = [ pkgs.nodejs_20 pkgs.git pkgs.cocoapods pkgs.python3 pkgs.ffmpeg ];
+            shellHook = ''
+              echo "relay dev shell (node $(node --version))"
+            '';
+          };
         });
     };
 }
