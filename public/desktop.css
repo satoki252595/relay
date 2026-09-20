@@ -1,0 +1,82 @@
+/* Relay デスクトップ拡張 (Electron 時のみ読み込まれる。モバイルには無影響) */
+body.desktop #app { display: flex; height: 100dvh; }
+body.desktop #view-connect { margin: auto; }
+body.desktop #tabbar,
+body.desktop #tab-projects,
+body.desktop #bar-projects,
+body.desktop #chat-back,
+body.desktop #chat-empty-go { display: none !important; }
+body.desktop #view-main { flex: 1; min-width: 0; }
+body.desktop .view { height: 100dvh; }
+body.desktop #bar-chat { border-bottom: 1px solid var(--line); }
+
+/* ---------- サイドバー ---------- */
+#dside {
+  width: 264px; flex: none; display: flex; flex-direction: column;
+  background: var(--panel); border-right: 1px solid var(--line);
+}
+#dside header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; font-weight: 700; }
+#dside header .logo { width: 24px; height: 24px; }
+#dside header .conn { margin-left: 2px; }
+#dprojects { flex: 1; overflow-y: auto; padding: 4px 8px 12px; }
+.dprj { margin-bottom: 2px; }
+.dprj-head {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  background: none; border: 0; border-radius: var(--radius-s);
+  padding: 8px; cursor: pointer; text-align: left;
+}
+.dprj-head:hover { background: var(--card); }
+.dprj-head svg { width: 18px; height: 18px; color: var(--muted); }
+.dprj-head strong { flex: 1; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dprj-head .newth {
+  border: 1px solid var(--line); background: none; border-radius: 6px;
+  width: 22px; height: 22px; font-size: 14px; line-height: 1; cursor: pointer; color: var(--muted);
+}
+.dprj-head .newth:hover { color: var(--text); border-color: var(--accent); }
+.dprj-head .caret { color: var(--faint); font-size: 11px; }
+.dirty-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--warn); flex: none; }
+.dthreads { margin: 0 0 4px 26px; }
+.dthread {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  background: none; border: 0; border-radius: var(--radius-s);
+  padding: 7px 8px; cursor: pointer; font-size: 13px; text-align: left;
+}
+.dthread:hover { background: var(--card); }
+.dthread.active { background: var(--raised); }
+.dthread .t { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dthread .st { font-size: 11px; color: var(--faint); flex: none; }
+.dthread .st.run { color: var(--accent); }
+.dthread .st.appr { color: var(--bad); font-weight: 700; }
+#dside footer { padding: 10px; border-top: 1px solid var(--line); }
+#dpair { width: 100%; }
+
+/* ---------- タブバー ---------- */
+#dmain { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+#dtabbar {
+  display: flex; align-items: center; gap: 6px; padding: 8px 10px 0;
+  background: var(--bg); overflow-x: auto;
+}
+.dtab {
+  display: flex; align-items: center; gap: 8px; max-width: 200px;
+  background: var(--panel); border: 1px solid var(--line); border-bottom: 0;
+  border-radius: 10px 10px 0 0; padding: 7px 8px 7px 12px;
+  cursor: pointer; font-size: 13px;
+}
+.dtab.active { background: var(--card); }
+.dtab .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dtab .x {
+  border: 0; background: none; border-radius: 6px; width: 20px; height: 20px;
+  cursor: pointer; color: var(--faint); font-size: 13px; line-height: 1; padding: 0;
+}
+.dtab .x:hover { background: var(--raised); color: var(--text); }
+.dtab .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.dtab .dot.run { background: var(--accent); animation: dtabblink 1.2s infinite; }
+.dtab .dot.appr { background: var(--bad); }
+@keyframes dtabblink { 50% { opacity: .35; } }
+#dtab-new {
+  border: 1px dashed var(--line); background: none; border-radius: 8px;
+  width: 28px; height: 28px; cursor: pointer; color: var(--muted); font-size: 16px; flex: none;
+}
+#dtab-new:hover { color: var(--text); border-color: var(--accent); }
+#dcontent { flex: 1; min-height: 0; display: flex; }
+#dcontent #view-main { width: 100%; }

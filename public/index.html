@@ -165,5 +165,17 @@
 </div>
 <script src="demo.js"></script>
 <script src="app.js"></script>
+<script>
+// mac 版 (Electron preload が window.relayDesktop を用意) のときだけ拡張 UI を読む
+if (window.relayDesktop) {
+  var dl = document.createElement('link');
+  dl.rel = 'stylesheet';
+  dl.href = 'desktop.css';
+  document.head.appendChild(dl);
+  var ds = document.createElement('script');
+  ds.src = 'desktop.js';
+  document.body.appendChild(ds);
+}
+</script>
 </body>
 </html>

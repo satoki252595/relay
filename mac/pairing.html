@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>iPhone と接続 — Relay</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #101218; color: #e8eaf0; font: 14px/1.6 -apple-system, sans-serif; }
+  .wrap { padding: 24px; max-width: 360px; margin: 0 auto; text-align: center; }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+  .sub { color: #9aa3b5; font-size: 12px; margin: 0 0 16px; }
+  #qr { background: #fff; padding: 12px; border-radius: 12px; display: inline-block; }
+  #qr img, #qr canvas, #qr table { display: block; }
+  .row { display: flex; gap: 8px; margin-top: 12px; text-align: left; }
+  .row code { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    background: #1a2030; border-radius: 8px; padding: 8px 10px; font-size: 12px; }
+  button { background: #2b3856; color: #fff; border: 0; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+  button:active { transform: scale(.97); }
+  .note { color: #9aa3b5; font-size: 11px; margin-top: 14px; text-align: left; }
+  .err { color: #ff8a8a; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>iPhone と接続</h1>
+  <p class="sub">同じ Wi-Fi の iPhone アプリに URL とトークンを入力</p>
+  <div id="qr"></div>
+  <div class="row"><code id="pair-url"></code><button id="copy-url">コピー</button></div>
+  <div class="row"><code id="pair-token"></code><button id="copy-token">コピー</button></div>
+  <p class="note">・この QR/値は同一 LAN 専用です。外出先からは Tailscale 経由で接続してください。<br>・トークンはこの Mac の利用者以外に見せないでください。</p>
+  <p id="pair-err" class="err"></p>
+</div>
+<script src="qrcode-vendor.js"></script>
+<script>
+(function () {
+  // ペイロードは URL ハッシュの base64url(JSON)。preload 実行時は location が
+  // 未確定のため、ページ側でパースする。
+  function parsePayload() {
+    try {
+      var h = window.location.hash.slice(1);
+      if (!h) return null;
+      var b64 = h.replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+      var bin = atob(b64);
+      var bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return JSON.parse(new TextDecoder().decode(bytes));
+    } catch (e) {
+      return null;
+    }
+  }
+  var p = parsePayload();
+  if (!p || !p.url || !p.token) {
+    document.getElementById('pair-err').textContent = 'ペアリング情報を読めませんでした。窓を開き直してください。';
+    return;
+  }
+  document.getElementById('pair-url').textContent = p.url;
+  document.getElementById('pair-token').textContent = p.token;
+  new QRCode(document.getElementById('qr'), {
+    text: JSON.stringify(p),
+    width: 220,
+    height: 220,
+    correctLevel: QRCode.CorrectLevel.M,
+  });
+  function copy(text, btn) {
+    function done() { btn.textContent = '済'; setTimeout(function () { btn.textContent = 'コピー'; }, 1200); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallback(); });
+    } else { fallback(); }
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) { /* noop */ }
+      ta.remove();
+    }
+  }
+  document.getElementById('copy-url').onclick = function (e) { copy(p.url, e.target); };
+  document.getElementById('copy-token').onclick = function (e) { copy(p.token, e.target); };
+})();
+</script>
+</body>
+</html>

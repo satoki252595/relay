@@ -3,23 +3,31 @@
   "version": "0.1.0",
   "description": "Agent Chat Client — chat UI in front, official subscription CLIs behind",
   "type": "module",
+  "main": "mac/main.js",
   "scripts": {
     "start": "node server/index.js",
     "test": "node --test",
     "icons:pwa": "node ops/make-icons.mjs",
     "icons:ios": "node ops/make-ios-assets.mjs",
-    "cap:sync": "cap sync"
+    "cap:sync": "cap sync",
+    "desktop": "electron mac/main.js",
+    "desktop:smoke": "electron mac/main.js --smoke-test",
+    "desktop:dist": "electron-builder --config mac/builder.json"
   },
   "dependencies": {
-    "@capacitor/cli": "^7.6.9",
-    "@capacitor/core": "^7.6.9",
-    "@capacitor/haptics": "^7.0.5",
-    "@capacitor/ios": "^7.6.9",
-    "@capacitor/keyboard": "^7.0.6",
-    "@capacitor/status-bar": "^7.0.6",
     "express": "^4.21.2"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.5.2",
+    "@capacitor/keyboard": "^8.0.5",
+    "@capacitor/status-bar": "^8.0.3",
+    "electron": "^44.4.3",
+    "electron-builder": "^26.15.3"
   }
 }

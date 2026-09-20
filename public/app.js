@@ -975,6 +975,14 @@ function init() {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 
+  // mac 版 (Electron): preload の接続情報で自動ログイン
+  if (window.relayDesktop && !state.token && window.relayDesktop.token) {
+    state.base = window.relayDesktop.base || state.base;
+    state.token = window.relayDesktop.token;
+    localStorage.setItem('relay_base', state.base);
+    localStorage.setItem('relay_token', state.token);
+  }
+
   if (state.token) {
     enterMain().catch(() => {
       $('view-main').classList.add('hidden');
@@ -984,3 +992,6 @@ function init() {
 }
 
 init();
+
+// デスクトップ拡張 (public/desktop.js) 用フック。モバイル挙動への影響なし。
+window.RelayHooks = { state, api, openThread, switchTab, refreshProjects, disconnect };

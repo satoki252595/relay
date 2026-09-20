@@ -50,6 +50,27 @@ Bundle ID `dev.relay.agentchat`、Team QVUR5T7J46、初回 1.0.0 (1)。
 npm run cap:sync   # Web 資産を iOS へ同期
 ```
 
+## macOS アプリ (Electron ホスト)
+
+iPhone 版の相手役になるデスクトップホスト。同一 `server/` を内蔵起動し、
+`public/` UI を拡張レイアウト (サイドバー＋並列セッションタブ) で表示する。
+モバイル向け挙動は不変 (拡張は Electron 検出時のみ有効化)。
+
+```sh
+npm run desktop         # 開発起動 (データは ~/Library/Application Support/Relay)
+npm run desktop:smoke   # 起動・自動接続・QR の headless 検証
+npm run desktop:dist    # 署名+公証つき DMG/ZIP (要: Developer ID 証明書 + API キー)
+```
+
+- メニュー / サイドバーの「iPhone と接続」から QR (LAN URL＋トークン) を表示。
+  iPhone は同じ Wi-Fi から手入力で接続 (外出先は Tailscale 経由)。
+- データ・プロジェクトは `~/Library/Application Support/Relay/` 配下。
+  公式 CLI はログインシェルの PATH で検出する。
+- 未署名のローカル確認ビルド:
+  `npx electron-builder --config mac/builder.json --mac -c.mac.identity=null`
+- 公証には `APPLE_API_KEY_ID` / `APPLE_API_ISSUER_ID` / `APPLE_API_KEY_P8`
+  (iOS レーンと同一キー) を設定。未設定なら署名のみで通過する。
+
 ## セットアップ（自宅サーバー）
 
 ```sh

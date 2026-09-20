@@ -2,6 +2,7 @@ node_modules/
 data/
 projects/
 build/
+dist/
 .env
 *.log
 .DS_Store
