@@ -1,0 +1,22 @@
+[Unit]
+Description=Relay Agent Chat (host daemon)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/opt/relay
+ExecStart=/usr/bin/node /opt/relay/server/index.js
+Restart=on-failure
+RestartSec=5
+# 閉域公開前提。127.0.0.1 のまま Tailscale Serve で出す
+Environment=HOST=127.0.0.1
+Environment=PORT=8787
+Environment=DATA_DIR=/opt/relay/data
+Environment=PROJECTS_ROOT=/opt/relay/projects
+# EnvironmentFile=/opt/relay/.env
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

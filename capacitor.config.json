@@ -1,0 +1,25 @@
+{
+  "appId": "dev.relay.agentchat",
+  "appName": "Relay",
+  "webDir": "public",
+  "backgroundColor": "#101218",
+  "ios": {
+    "preferredContentMode": "mobile",
+    "limitsNavigationsToAppBoundDomains": true
+  },
+  "plugins": {
+    "Keyboard": {
+      "resize": "body",
+      "resizeOnFullScreen": true
+    },
+    "StatusBar": {
+      "style": "dark",
+      "backgroundColor": "#101218"
+    },
+    "SplashScreen": {
+      "backgroundColor": "#101218",
+      "showSpinner": false,
+      "launchShowDuration": 800
+    }
+  }
+}

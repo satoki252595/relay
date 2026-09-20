@@ -1,0 +1,10 @@
+node_modules/
+data/
+projects/
+.env
+*.log
+.DS_Store
+# Xcode user state (never release inputs)
+ios/App/*.xcworkspace/xcuserdata/
+ios/App/*.xcodeproj/xcuserdata/
+DerivedData/

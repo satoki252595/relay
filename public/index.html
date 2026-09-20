@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101218">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Relay">
+<title>Relay — Agent Chat</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></symbol>
+    <symbol id="i-diff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="8" r="2.5"/><path d="M6 8.5v7M18 10.5c0 4-5 3-8.5 5"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.3M21 3v6h-6"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-logo" viewBox="0 0 48 48"><rect x="2" y="2" width="44" height="44" rx="12" fill="#1c2742"/><path d="M10 13a5 5 0 0 1 5-5h18a5 5 0 0 1 5 5v11a5 5 0 0 1-5 5H20l-6 6v-6h-4a5 5 0 0 1-5-5z" fill="#5b8cff"/><path d="M20 15v10M20 15h5a3 3 0 0 1 0 6h-5M23 21l4 4" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  </defs>
+</svg>
+
+<div id="app">
+  <!-- 接続 -->
+  <section id="view-connect" class="view">
+    <div class="connect-card">
+      <svg class="logo"><use href="#i-logo"/></svg>
+      <h1>Relay</h1>
+      <p class="sub">自宅サーバー上の公式 CLI を、スマホのチャットから使う</p>
+      <label class="field">サーバー URL
+        <input id="connect-url" type="url" inputmode="url" autocomplete="url" placeholder="https://homeserver.ts.net">
+      </label>
+      <label class="field">トークン
+        <span class="token-row">
+          <input id="connect-token" type="password" autocomplete="current-password" placeholder="ホストの data/.token">
+          <button id="connect-peek" class="icon-btn" aria-label="トークン表示切替"><svg><use href="#i-eye"/></svg></button>
+        </span>
+      </label>
+      <button id="connect-go" class="btn primary big">接続する</button>
+      <button id="connect-demo" class="btn dashed">デモを見る (サーバー不要)</button>
+      <p id="connect-err" class="err" role="alert"></p>
+      <p class="hint">閉域 (Tailscale 等) 経由で接続。鍵はホストの公式 CLI 領域にのみ置きます。</p>
+    </div>
+  </section>
+
+  <!-- メイン -->
+  <section id="view-main" class="view hidden">
+    <div id="demo-banner" class="demo-banner hidden"><span>デモモード — サーバー未接続</span><button id="demo-exit">終了</button></div>
+    <header id="appbar">
+      <div id="bar-projects" class="bar">
+        <svg class="logo sm"><use href="#i-logo"/></svg>
+        <strong>Relay</strong>
+        <span id="conn-dot" class="conn" title="接続状態"></span>
+        <span class="sp"></span>
+        <button id="btn-disconnect" class="icon-btn" aria-label="切断"><svg><use href="#i-x"/></svg></button>
+      </div>
+      <div id="bar-chat" class="bar hidden">
+        <button id="chat-back" class="icon-btn" aria-label="スレッド一覧へ"><svg><use href="#i-back"/></svg></button>
+        <button id="chat-title-btn" class="title-btn">
+          <strong id="chat-thread">スレッド</strong>
+          <span id="chat-project" class="sub"></span>
+        </button>
+        <span id="conn-dot-chat" class="conn" title="接続状態"></span>
+        <button id="chat-diff" class="diff-btn" aria-label="変更 diff を開く">
+          <svg><use href="#i-diff"/></svg><span id="diff-badge" class="badge hidden"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- プロジェクトタブ -->
+    <main id="tab-projects" class="tab">
+      <div id="harness-strip" class="harness-strip"></div>
+      <div id="projects-pane">
+        <div class="pane-head"><h2>プロジェクト</h2></div>
+        <div id="project-list" class="cards"></div>
+        <button id="project-add" class="btn dashed"><svg><use href="#i-plus"/></svg>新規プロジェクト</button>
+      </div>
+      <div id="threads-pane" class="hidden">
+        <button id="threads-back" class="back-row"><svg><use href="#i-back"/></svg><span id="threads-prj"></span></button>
+        <div id="thread-list" class="cards"></div>
+        <div class="new-thread">
+          <input id="thread-title" type="text" maxlength="60" placeholder="スレッド名 (空で自動)">
+          <button id="thread-create" class="btn primary">開始</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- チャットタブ -->
+    <main id="tab-chat" class="tab hidden">
+      <div id="chat-empty" class="empty">
+        <svg class="empty-icon"><use href="#i-chat"/></svg>
+        <p>スレッドを選んで開始</p>
+        <button id="chat-empty-go" class="btn primary">プロジェクトを開く</button>
+      </div>
+      <div id="chat-wrap" class="hidden">
+        <div id="jobzone"></div>
+        <div id="messages" class="messages" aria-live="polite"></div>
+        <button id="jump-latest" class="jump hidden"><svg><use href="#i-down"/></svg>最新へ</button>
+        <div id="approval-slot"></div>
+        <footer id="composer">
+          <div id="harness-chips" class="chips" role="radiogroup" aria-label="送信先ハーネス"></div>
+          <div class="compose-row">
+            <button id="btn-voice" class="icon-btn mic" aria-label="音声入力"><svg><use href="#i-mic"/></svg></button>
+            <textarea id="input" rows="1" maxlength="20000" placeholder="指示を入力…" aria-label="指示入力"></textarea>
+            <button id="btn-send" class="send-btn" aria-label="送信" disabled><svg><use href="#i-send"/></svg></button>
+          </div>
+          <div class="compose-sub">
+            <button id="model-toggle" class="link">model: <span id="model-name">既定</span></button>
+            <span id="voice-status" class="voice-status"></span>
+          </div>
+          <div id="model-row" class="hidden">
+            <input id="model-pick" type="text" list="model-list" placeholder="空=既定 (例 sonnet, gpt-5.2)">
+            <datalist id="model-list"></datalist>
+          </div>
+        </footer>
+      </div>
+    </main>
+
+    <nav id="tabbar">
+      <button id="tabbtn-projects" class="tabbtn active"><svg><use href="#i-folder"/></svg><span>プロジェクト</span></button>
+      <button id="tabbtn-chat" class="tabbtn"><svg><use href="#i-chat"/></svg><span>チャット</span><span id="chat-badge" class="badge hidden"></span></button>
+    </nav>
+  </section>
+
+  <!-- 汎用ボトムシート -->
+  <div id="scrim" class="scrim hidden"></div>
+  <div id="sheet" class="sheet hidden" role="dialog" aria-modal="true"></div>
+
+  <!-- diff 全画面 -->
+  <div id="diffview" class="diffview hidden">
+    <header class="bar">
+      <button id="diff-close" class="icon-btn" aria-label="diff を閉じる"><svg><use href="#i-x"/></svg></button>
+      <strong>変更</strong>
+      <span id="diff-stat" class="sub"></span>
+      <span class="sp"></span>
+      <button id="diff-refresh" class="icon-btn" aria-label="更新"><svg><use href="#i-refresh"/></svg></button>
+    </header>
+    <div class="seg">
+      <button id="seg-files" class="seg-btn active">ファイル</button>
+      <button id="seg-all" class="seg-btn">一括</button>
+    </div>
+    <div id="diff-files" class="diff-files"></div>
+    <pre id="diff-body" class="diff-body hidden"></pre>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="assertive"></div>
+</div>
+<script src="demo.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
