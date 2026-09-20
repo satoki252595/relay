@@ -36,6 +36,20 @@ relay/
 通信: UI→ホストは REST、ホスト→UI は SSE。
 ブラウザを閉じてもジョブはホストで継続し、開き直すと追いつく。
 
+## iOS アプリ (App Store 提出用)
+
+`public/` を Capacitor で束ねたネイティブシェル (`ios/`)。
+Bundle ID `dev.relay.agentchat`、Team QVUR5T7J46、初回 1.0.0 (1)。
+
+- 審査・試用できる**デモモード**付き (接続画面→「デモを見る」)
+- 自宅 LAN の `http://` 到達用に `NSAllowsLocalNetworking` を設定
+- 手順・メタ・審査メモは [ios/RELEASE.md](ios/RELEASE.md)、
+  法務文書は [ops/legal](ops/legal)
+
+```sh
+npm run cap:sync   # Web 資産を iOS へ同期
+```
+
 ## セットアップ（自宅サーバー）
 
 ```sh
