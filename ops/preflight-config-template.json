@@ -1,0 +1,55 @@
+{
+  "schema_version": 2,
+  "repo": "__REPO__",
+  "release": {
+    "version": "1.0.0",
+    "build": "1",
+    "bundle_id": "dev.relay.agentchat",
+    "team_id": "QVUR5T7J46",
+    "operation": "first_release",
+    "branch": "main",
+    "sku": "relay-ios",
+    "release_method": "manual",
+    "primary_language": "ja",
+    "localizations": ["ja", "en"],
+    "commerce_mode": "none",
+    "app_store_connect_id": "__APPID__"
+  },
+  "source": {
+    "xcode_project": "ios/App/App.xcodeproj",
+    "release_targets": ["App"],
+    "release_configuration": "Release",
+    "privacy_manifest_na_reason": "App target contains no first-party native code accessing required-reason APIs. All native code ships in Capacitor frameworks, which bundle their own PrivacyInfo.xcprivacy manifests with empty accessed-API/data/tracking declarations.",
+    "required_usage_descriptions": []
+  },
+  "bundles": [
+    {
+      "kind": "app",
+      "bundle_id": "dev.relay.agentchat",
+      "app_id_prefix": "QVUR5T7J46",
+      "required_entitlements": {
+        "get-task-allow": false,
+        "com.apple.developer.team-identifier": "QVUR5T7J46"
+      },
+      "unchecked_entitlements": {
+        "application-identifier": "Xcode automatic signing composes this from the App ID prefix and bundle ID; exact value verified against the embedded profile at binary stage.",
+        "keychain-access-groups": "Xcode-generated default keychain group; exact value verified against the embedded profile at binary stage.",
+        "beta-reports-active": "Xcode adds this for App Store/TestFlight distribution."
+      },
+      "required_info_values": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "unchecked_info_keys": {},
+      "policy_reason": "Relay 1.0.0 has no extensions, no background modes, no usage descriptions, and no custom entitlements. Closed-world Info/entitlement values are cross-checked against the signed IPA at binary stage."
+    }
+  ],
+  "provenance": {
+    "source_commit": "__HEAD__",
+    "info_plist_key": "BuildSourceCommit"
+  },
+  "git": {
+    "require_clean": true,
+    "require_upstream": true,
+    "require_locally_pushed": true
+  }
+}
