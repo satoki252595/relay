@@ -32,20 +32,30 @@ nix develop --command python3 "$VALIDATOR" verify --stage source \
   --config "$EVIDENCE/source-config.json" --strict-warnings
 echo "==> SOURCE STAGE PASSED"
 
+# API キー認証 (ある場合のみ。Xcode アカウント未設定でも archive/export が通る)
+AUTH_ARGS=()
+if [ -n "${API_KEY_ID:-}" ] && [ -n "${API_ISSUER_ID:-}" ] && [ -n "${KEY_P8:-}" ]; then
+  AUTH_ARGS=(-authenticationKeyPath "$KEY_P8" -authenticationKeyID "$API_KEY_ID" -authenticationKeyIssuerID "$API_ISSUER_ID")
+fi
+
 # 2. archive (プロファイルは -allowProvisioningUpdates で自動作成/更新)
 xcodebuild -workspace ios/App/App.xcworkspace \
   -scheme App -configuration Release \
   -destination 'generic/platform=iOS' \
   -archivePath "$REPO/build/Relay.xcarchive" \
   -allowProvisioningUpdates \
+  "${AUTH_ARGS[@]}" \
   BUILD_SOURCE_COMMIT="$HEAD" archive
 echo "==> ARCHIVE DONE"
 
-# 3. export (App Store Connect 提出用 ipa + DistributionSummary)
+# 3. export (App Store Connect 提出用 ipa + DistributionSummary。upload は step 5)
+rm -rf "$REPO/build/export"
 xcodebuild -exportArchive \
   -archivePath "$REPO/build/Relay.xcarchive" \
   -exportPath "$REPO/build/export" \
-  -exportOptionsPlist "$REPO/ios/ExportOptions.plist"
+  -exportOptionsPlist "$REPO/ios/ExportOptions.plist" \
+  -allowProvisioningUpdates \
+  "${AUTH_ARGS[@]}"
 IPA="$(ls "$REPO/build/export/"*.ipa | head -n 1)"
 echo "==> EXPORT DONE: $IPA"
 
@@ -77,6 +87,10 @@ python3 -c "import json; print('binary_preupload_fingerprint:', json.load(open('
 
 # 5. upload (API キーがある場合のみ。なければコマンドを表示して終了)
 if [ -n "${API_KEY_ID:-}" ] && [ -n "${API_ISSUER_ID:-}" ] && [ -n "${KEY_P8:-}" ]; then
+  # altool は ~/.appstoreconnect/private_keys/AuthKey_<KEY_ID>.p8 を見る
+  KEYDIR="$HOME/.appstoreconnect/private_keys"
+  mkdir -p "$KEYDIR"
+  [ -e "$KEYDIR/AuthKey_${API_KEY_ID}.p8" ] || cp "$KEY_P8" "$KEYDIR/AuthKey_${API_KEY_ID}.p8"
   xcrun altool --upload-package "$IPA" -t ios \
     --apiKey "$API_KEY_ID" --apiIssuer "$API_ISSUER_ID" --verbose
   echo "==> UPLOAD DONE. TestFlight の処理完了を待ってビルドを選択すること"
