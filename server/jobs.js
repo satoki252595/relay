@@ -18,10 +18,18 @@ import {
 } from './store.js';
 import { getHarness } from './harnesses/index.js';
 import { classifyPrompt, classifyToolCall } from './risk.js';
-import { gitDiff, gitDiffNumstat, projectDir } from './git.js';
+import { gitDiff, gitDiffNumstat, projectDir, gitHead, stashPush, resetHard } from './git.js';
 import { emit } from './events.js';
 
 const running = new Map(); // jobId -> child process
+
+export const MODES = ['act', 'plan'];
+export const PLAN_PREFIX =
+  '【相談モード】ファイルの作成・編集・削除やコマンド実行はせず、調査・計画・回答のみ行ってください。\n\n';
+
+export function applyMode(prompt, mode) {
+  return mode === 'plan' ? PLAN_PREFIX + prompt : prompt;
+}
 
 function threadContext(threadId, maxChars = 4000) {
   const msgs = listMessages(threadId).filter((m) => m.role !== 'system');
@@ -57,12 +65,14 @@ export function createJob({ threadId, projectId, prompt, harness, model }) {
   });
 
   const risk = classifyPrompt(prompt);
+  const mode = thread.mode === 'plan' ? 'plan' : 'act';
   const job = saveJob({
     id: uid('job'),
     threadId,
     projectId,
     harness,
     model: model || null,
+    mode,
     prompt,
     userMessageId: userMsg.id,
     status: risk.needsApproval ? 'awaiting_approval' : 'queued',
@@ -121,6 +131,16 @@ export async function startJob(jobId, { resumed = false } = {}) {
     const ctx = threadContext(job.threadId);
     if (ctx) prompt = `${ctx}今回の指示: ${job.prompt}`;
   }
+  prompt = applyMode(prompt, job.mode || 'act');
+
+  // 実行直前の HEAD をチェックポイント化 (巻き戻し用。best-effort)
+  try {
+    const head = await gitHead(dir);
+    if (head && !job.checkpoint) {
+      job.checkpoint = { head, at: Date.now() };
+      saveJob(job);
+    }
+  } catch { /* 非 git 等は巻き戻し非対応 */ }
 
   const { cmd, argv, cwd } = adapter.build({
     prompt,
@@ -422,6 +442,31 @@ export async function publishDiff(projectId) {
 
 export function isRunning(jobId) {
   return running.has(jobId);
+}
+
+/** ジョブ開始時の HEAD に巻き戻す。現状は stash に退避してから戻す (復旧可)。
+ * 実行中ジョブがあるスレッドでは拒否する。 */
+export async function rewindJob(jobId) {
+  const job = getJob(jobId);
+  if (!job) throw new Error('ジョブが見つかりません');
+  if (!job.checkpoint?.head) throw new Error('このジョブにチェックポイントがありません');
+  if (job.rewound) throw new Error('このジョブは巻き戻し済みです');
+  const active = listJobs({ threadId: job.threadId }).find((j) =>
+    ['queued', 'running', 'awaiting_approval'].includes(j.status),
+  );
+  if (active) throw new Error('実行中のジョブがあります。中断・承認・拒否してから実行してください');
+  const project = getProject(job.projectId);
+  if (!project) throw new Error('プロジェクトが見つかりません');
+  const dir = projectDir(project);
+  const stash = await stashPush(dir, `relay-rewind:${job.id}`);
+  await resetHard(dir, job.checkpoint.head);
+  job.rewound = { at: Date.now(), head: job.checkpoint.head, stashed: stash.ok };
+  job.updatedAt = Date.now();
+  saveJob(job);
+  appendJobLog(jobId, `[relay] rewound to ${job.checkpoint.head} (stashed: ${stash.ok})`);
+  emit('job_update', { job });
+  await publishDiff(job.projectId);
+  return { ok: true, head: job.checkpoint.head, stashed: stash.ok };
 }
 
 export function jobWithLog(jobId) {

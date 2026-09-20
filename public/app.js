@@ -25,6 +25,9 @@ const state = {
   follow: true,
   pending: new Map(), // threadId -> jobId (承認待ち)
   demo: false,
+  files: [], // @言及候補 (openThread で取得・project 単位キャッシュ)
+  filesProjectId: null,
+  queue: [], // 待機送信 [{ threadId, text, harness, model }]
 };
 
 /* ============ 小物 ============ */
@@ -238,7 +241,6 @@ async function enterDemo() {
     () => resyncThread(),
   );
   state.harnesses = await api('/api/harnesses');
-  renderHarnessStrip();
   renderChips();
   await refreshProjects();
   setConn('ok');
@@ -273,7 +275,6 @@ async function enterMain() {
   if (!state.harnesses.some((h) => h.id === state.harness && h.installed)) {
     state.harness = (state.harnesses.find((h) => h.installed) || state.harnesses[0] || {}).id || 'claude';
   }
-  renderHarnessStrip();
   renderChips();
   await refreshProjects();
   openSSE();
@@ -286,14 +287,6 @@ async function enterMain() {
       localStorage.removeItem('relay_thread');
     }
   }
-}
-
-function renderHarnessStrip() {
-  $('harness-strip').innerHTML = state.harnesses
-    .map(
-      (h) => `<span class="hchip ${h.installed ? '' : 'missing'}" title="${esc(h.version || (h.installed ? '' : '未インストール'))}"><span class="dot"></span>${h.label}<small>${h.provider}</small></span>`,
-    )
-    .join('');
 }
 
 function renderChips() {
@@ -488,8 +481,12 @@ async function openThread(id, { silent = false } = {}) {
   renderMessages();
   renderJobzone();
   renderApproval();
+  renderModeSeg();
+  renderQueue();
+  renderSendBtn();
   restoreDraft();
   refreshDiffBadge();
+  void refreshFiles(data.thread.projectId);
   if (!silent) switchTab('chat');
 }
 
@@ -572,14 +569,10 @@ function renderJobzone() {
     return;
   }
   if (job.status === 'awaiting_approval') return; // 承認カード側で表示
+  // 停止は composer のボタンに一本化 (このカードは状態表示のみ)
   const div = document.createElement('div');
   div.className = 'job';
   div.innerHTML = `<span class="spin"></span><div class="grow"><strong>${esc(HARNESS_JA[job.harness] || '')}</strong> ${job.status === 'queued' ? '待機中' : '実行中'}<div class="t" data-t0="${job.updatedAt}">${elapsed(job.updatedAt)}</div></div>`;
-  const b = document.createElement('button');
-  b.className = 'stop';
-  b.textContent = '中断';
-  b.onclick = () => jobAction(job.id, 'interrupt');
-  div.appendChild(b);
   zone.appendChild(div);
 }
 
@@ -622,22 +615,41 @@ async function resyncThread() {
   if (!state.thread) return;
   try {
     const data = await api(`/api/threads/${state.thread.id}`);
+    state.thread = data.thread;
     state.messages = data.messages;
     state.jobs = data.jobs;
     // ストリーミング中の応答性のため、差分が1件の更新なら patch を優先
     renderMessages();
     renderJobzone();
     renderApproval();
+    renderModeSeg();
+    renderSendBtn();
     refreshDiffBadge();
+    void flushQueue();
   } catch { /* 切断時などは SSE 復帰で追従 */ }
 }
 
 /* ---------- composer ---------- */
+function sendMode() {
+  const job = activeJob();
+  if (job && (job.status === 'running' || job.status === 'queued')) return 'stop';
+  return 'send';
+}
+
+function renderSendBtn() {
+  const btn = $('btn-send');
+  const mode = sendMode();
+  btn.classList.toggle('stop', mode === 'stop');
+  btn.innerHTML = mode === 'stop' ? '<svg><use href="#i-stop"/></svg>' : '<svg><use href="#i-send"/></svg>';
+  btn.setAttribute('aria-label', mode === 'stop' ? '中断' : '送信');
+  btn.disabled = mode === 'send' && !$('input').value.trim();
+}
+
 function autogrow() {
   const ta = $('input');
   ta.style.height = 'auto';
   ta.style.height = Math.min(ta.scrollHeight, 132) + 'px';
-  $('btn-send').disabled = !ta.value.trim() || !!activeJob();
+  renderSendBtn();
 }
 
 function saveDraft() {
@@ -649,19 +661,47 @@ function restoreDraft() {
   autogrow();
 }
 
-async function send() {
-  const text = $('input').value.trim();
-  if (!text || !state.thread || activeJob()) return;
-  $('input').value = '';
-  autogrow();
-  saveDraft();
+let sending = false; // POST 飛行中 (activeJob が更新されるまでの繋ぎ)
+
+async function send(preset) {
+  const text = (preset?.text ?? $('input').value).trim();
+  const harness = preset?.harness ?? state.harness;
+  const model = preset?.model ?? ($('model-pick').value.trim() || null);
+  if (!text || !state.thread) return;
+  // 実行中・承認待ち・送信飛行中でも受け付けて待機列へ (考えを止めない)
+  if (activeJob() || sending) {
+    const mine = state.queue.filter((q) => q.threadId === state.thread.id);
+    if (mine.length >= 3) {
+      toast('待機は3件までです', 'warn');
+      return;
+    }
+    state.queue.push({ threadId: state.thread.id, text, harness, model });
+    if (!preset) {
+      $('input').value = '';
+      autogrow();
+      saveDraft();
+    }
+    pushHist(text);
+    buzz(15);
+    renderQueue();
+    toast('送信待ちに入れました');
+    return;
+  }
+  if (!preset) {
+    $('input').value = '';
+    autogrow();
+    saveDraft();
+  }
   buzz(15);
+  sending = true;
+  renderSendBtn();
   try {
     const data = await api(`/api/threads/${state.thread.id}/messages`, {
       method: 'POST',
-      body: JSON.stringify({ text, harness: state.harness, model: $('model-pick').value.trim() || null }),
+      body: JSON.stringify({ text, harness, model }),
     });
     if (state.thread) localStorage.removeItem(`relay_draft_${state.thread.id}`);
+    pushHist(text);
     state.follow = true;
     await resyncThread();
     // デモには SSE がないため承認通知を直接出す (実機では SSE が届く)
@@ -669,10 +709,163 @@ async function send() {
       noteApproval(state.thread.id, state.thread.projectId, data.job);
     }
   } catch (err) {
-    $('input').value = text;
-    autogrow();
+    if (!preset) {
+      $('input').value = text;
+      autogrow();
+    } else {
+      state.queue.unshift({ threadId: state.thread.id, text, harness, model });
+      renderQueue();
+    }
+    toast(String(err.message || err), 'bad');
+  } finally {
+    sending = false;
+    renderSendBtn();
+  }
+}
+
+/* ---------- 待機送信キュー ---------- */
+let flushing = false;
+
+function renderQueue() {
+  const mine = state.thread ? state.queue.filter((q) => q.threadId === state.thread.id) : [];
+  const chip = $('queue-chip');
+  chip.classList.toggle('hidden', mine.length === 0);
+  if (mine.length) {
+    const first = mine[0].text.split('\n')[0].slice(0, 40);
+    $('queue-text').textContent = mine.length > 1 ? `待機 ${mine.length}件: ${first}…` : `待機中: ${first}`;
+  }
+  placeJump();
+}
+
+function cancelQueue() {
+  if (!state.thread) return;
+  state.queue = state.queue.filter((q) => q.threadId !== state.thread.id);
+  renderQueue();
+}
+
+async function flushQueue() {
+  if (flushing || !state.thread || activeJob()) return;
+  const i = state.queue.findIndex((q) => q.threadId === state.thread.id);
+  if (i < 0) return;
+  flushing = true;
+  try {
+    const [q] = state.queue.splice(i, 1);
+    renderQueue();
+    await send({ text: q.text, harness: q.harness, model: q.model });
+  } finally {
+    flushing = false;
+  }
+}
+
+/* ---------- プロンプト履歴 ---------- */
+function loadHist() {
+  try {
+    const h = JSON.parse(localStorage.getItem('relay_hist') || '[]');
+    return Array.isArray(h) ? h.filter((x) => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function pushHist(text) {
+  const h = [text, ...loadHist().filter((x) => x !== text)].slice(0, 30);
+  try {
+    localStorage.setItem('relay_hist', JSON.stringify(h));
+  } catch { /* 容量時は捨てる */ }
+}
+
+function sheetHistory() {
+  const h = loadHist();
+  openSheet(`
+    <h3>プロンプト履歴</h3>
+    ${h.length ? `<div class="hist">${h.map((t, i) => `<button data-i="${i}">${esc(t.split('\n')[0].slice(0, 60))}</button>`).join('')}</div>` : '<div class="empty"><p>まだありません</p></div>'}`);
+  $('sheet').querySelectorAll('.hist button').forEach((b) => {
+    b.onclick = () => {
+      $('input').value = h[Number(b.dataset.i)];
+      autogrow();
+      saveDraft();
+      closeSheet();
+      setTimeout(() => $('input').focus(), 50);
+    };
+  });
+}
+
+/* ---------- 実行モード (実行/相談) ---------- */
+function threadMode() {
+  return state.thread?.mode === 'plan' ? 'plan' : 'act';
+}
+
+function renderModeSeg() {
+  const m = threadMode();
+  $('mode-act').classList.toggle('active', m === 'act');
+  $('mode-plan').classList.toggle('active', m === 'plan');
+  $('mode-hint').classList.toggle('hidden', m !== 'plan');
+}
+
+async function setMode(m) {
+  if (!state.thread || threadMode() === m) return;
+  if (activeJob()) {
+    toast('実行中は切り替えられません', 'warn');
+    return;
+  }
+  try {
+    state.thread = await api(`/api/threads/${state.thread.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ mode: m }),
+    });
+    renderModeSeg();
+  } catch (err) {
     toast(String(err.message || err), 'bad');
   }
+}
+
+/* ---------- @ファイル言及 ---------- */
+async function refreshFiles(projectId) {
+  if (state.filesProjectId === projectId) return;
+  try {
+    const data = await api(`/api/projects/${projectId}/files`);
+    state.files = data.files || [];
+    state.filesProjectId = projectId;
+  } catch {
+    state.files = [];
+    state.filesProjectId = projectId;
+  }
+}
+
+function checkMention() {
+  const ta = $('input');
+  const pop = $('mention-pop');
+  const pos = ta.selectionStart ?? ta.value.length;
+  const m = ta.value.slice(0, pos).match(/(^|\s)@([\w\-./]*)$/);
+  if (!m || !state.files.length) {
+    pop.classList.add('hidden');
+    return;
+  }
+  const q = m[2].toLowerCase();
+  const hits = state.files.filter((f) => f.toLowerCase().includes(q)).slice(0, 8);
+  if (!hits.length) {
+    pop.classList.add('hidden');
+    return;
+  }
+  pop.innerHTML = '';
+  for (const f of hits) {
+    const b = document.createElement('button');
+    b.textContent = f;
+    // mousedown で先取り (blur より先に確定させる)
+    b.onmousedown = (e) => {
+      e.preventDefault();
+      const before = ta.value.slice(0, pos).replace(/@[\w\-./]*$/, `@${f} `);
+      ta.value = before + ta.value.slice(pos);
+      const caret = before.length;
+      ta.setSelectionRange(caret, caret);
+      pop.classList.add('hidden');
+      autogrow();
+      saveDraft();
+    };
+    pop.appendChild(b);
+  }
+  pop.classList.remove('hidden');
+  placeJump();
 }
 
 /* ---------- 音声入力 ---------- */
@@ -748,6 +941,28 @@ async function openDiff() {
     renderDiff();
   } catch (err) {
     $('diff-files').innerHTML = `<div class="empty"><p>${esc(String(err.message || err))}</p></div>`;
+  }
+  $('diff-rewind').classList.toggle('hidden', !latestCheckpointJob());
+}
+
+/* ---------- チェックポイント巻き戻し ---------- */
+function latestCheckpointJob() {
+  return [...state.jobs].reverse().find((j) => j.checkpoint && !j.rewound) || null;
+}
+
+async function doRewind() {
+  const job = latestCheckpointJob();
+  if (!job || activeJob()) return;
+  const when = job.checkpoint.at ? relTime(job.checkpoint.at) : '';
+  if (!confirm(`チェックポイント (${when}) に戻しますか？\n現在の変更は退避されます (あとで復旧可)`)) return;
+  try {
+    const r = await api(`/api/jobs/${job.id}/rewind`, { method: 'POST' });
+    toast(r.stashed ? '巻き戻しました (変更は退避済み)' : '巻き戻しました');
+    await resyncThread();
+    await openDiff();
+    refreshProjects();
+  } catch (err) {
+    toast(String(err.message || err), 'bad');
   }
 }
 
@@ -841,13 +1056,17 @@ function openSSE() {
     if (mine(d)) {
       const data = await api(`/api/threads/${state.thread.id}`).catch(() => null);
       if (data) {
+        state.thread = data.thread;
         state.messages = data.messages;
         state.jobs = data.jobs;
         renderMessages();
         renderJobzone();
         renderApproval();
+        renderModeSeg();
+        renderSendBtn();
       }
       refreshDiffBadge();
+      void flushQueue();
     }
   });
   es.addEventListener('thread_update', (e) => {
@@ -929,16 +1148,31 @@ function init() {
   };
 
   $('scrim').onclick = closeSheet;
-  $('btn-send').onclick = send;
+  $('btn-send').onclick = () => {
+    if (sendMode() === 'stop') {
+      const job = activeJob();
+      if (job) jobAction(job.id, 'interrupt');
+    } else {
+      send();
+    }
+  };
   const ta = $('input');
-  ta.addEventListener('input', () => { autogrow(); saveDraft(); });
+  ta.addEventListener('input', () => { autogrow(); saveDraft(); checkMention(); });
+  ta.addEventListener('click', checkMention);
+  ta.addEventListener('blur', () => setTimeout(() => $('mention-pop').classList.add('hidden'), 150));
   ta.addEventListener('keydown', (e) => {
     // IME 確定の Enter (keyCode 229 / isComposing) では送信しない
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
       e.preventDefault();
-      send();
+      send(); // 実行中は待機列へ (停止はボタンの明示タップのみ)
     }
+    if (e.key === 'Escape') $('mention-pop').classList.add('hidden');
   });
+  $('mode-act').onclick = () => setMode('act');
+  $('mode-plan').onclick = () => setMode('plan');
+  $('btn-history').onclick = sheetHistory;
+  $('queue-cancel').onclick = cancelQueue;
+  $('diff-rewind').onclick = doRewind;
   $('model-toggle').onclick = () => $('model-row').classList.toggle('hidden');
   $('model-pick').addEventListener('input', () => {
     $('model-name').textContent = $('model-pick').value.trim() || '既定';

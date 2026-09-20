@@ -33,6 +33,8 @@
     <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></symbol>
     <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></symbol>
     <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></symbol>
+    <symbol id="i-rewind" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.6-6.3M3 4v5h5"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></symbol>
     <symbol id="i-logo" viewBox="0 0 48 48"><rect x="2" y="2" width="44" height="44" rx="12" fill="#1c2742"/><path d="M10 13a5 5 0 0 1 5-5h18a5 5 0 0 1 5 5v11a5 5 0 0 1-5 5H20l-6 6v-6h-4a5 5 0 0 1-5-5z" fill="#5b8cff"/><path d="M20 15v10M20 15h5a3 3 0 0 1 0 6h-5M23 21l4 4" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
   </defs>
@@ -87,7 +89,6 @@
 
     <!-- プロジェクトタブ -->
     <main id="tab-projects" class="tab">
-      <div id="harness-strip" class="harness-strip"></div>
       <div id="projects-pane">
         <div class="pane-head"><h2>プロジェクト</h2></div>
         <div id="project-list" class="cards"></div>
@@ -116,7 +117,16 @@
         <button id="jump-latest" class="jump hidden"><svg><use href="#i-down"/></svg>最新へ</button>
         <div id="approval-slot"></div>
         <footer id="composer">
+          <div class="crow-top">
+            <div class="modeseg" role="radiogroup" aria-label="実行モード">
+              <button id="mode-act" class="active" title="実行: エージェントが作業する">実行</button>
+              <button id="mode-plan" title="相談: 変更せず計画・回答のみ">相談</button>
+            </div>
+            <button id="btn-history" class="icon-btn sm" aria-label="プロンプト履歴"><svg><use href="#i-clock"/></svg></button>
+          </div>
           <div id="harness-chips" class="chips" role="radiogroup" aria-label="送信先ハーネス"></div>
+          <div id="queue-chip" class="queue hidden"><span class="qdot"></span><span id="queue-text" class="qt"></span><button id="queue-cancel" aria-label="待機を取り消し">×</button></div>
+          <div id="mention-pop" class="mention hidden"></div>
           <div class="compose-row">
             <button id="btn-voice" class="icon-btn mic" aria-label="音声入力"><svg><use href="#i-mic"/></svg></button>
             <textarea id="input" rows="1" maxlength="20000" placeholder="指示を入力…" aria-label="指示入力"></textarea>
@@ -124,6 +134,7 @@
           </div>
           <div class="compose-sub">
             <button id="model-toggle" class="link">model: <span id="model-name">既定</span></button>
+            <span id="mode-hint" class="mode-hint hidden">相談中 — 変更しません</span>
             <span id="voice-status" class="voice-status"></span>
           </div>
           <div id="model-row" class="hidden">
@@ -151,6 +162,7 @@
       <strong>変更</strong>
       <span id="diff-stat" class="sub"></span>
       <span class="sp"></span>
+      <button id="diff-rewind" class="icon-btn hidden" aria-label="チェックポイントに戻す" title="チェックポイントに戻す"><svg><use href="#i-rewind"/></svg></button>
       <button id="diff-refresh" class="icon-btn" aria-label="更新"><svg><use href="#i-refresh"/></svg></button>
     </header>
     <div class="seg">

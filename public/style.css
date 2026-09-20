@@ -124,17 +124,6 @@ button { font: inherit; color: inherit; }
 
 /* ---------- projects ---------- */
 #tab-projects { padding: 12px 14px 24px; max-width: 720px; margin: 0 auto; width: 100%; }
-.harness-strip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 10px; scrollbar-width: none; }
-.harness-strip::-webkit-scrollbar { display: none; }
-.hchip {
-  display: flex; align-items: center; gap: 7px; padding: 8px 12px;
-  border: 1px solid var(--line); border-radius: 99px; background: var(--card);
-  font-size: 13px; white-space: nowrap;
-}
-.hchip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
-.hchip.missing { opacity: .55; }
-.hchip.missing .dot { background: var(--bad); }
-.hchip small { color: var(--faint); font-size: 11px; }
 .pane-head { display: flex; align-items: center; margin: 4px 0 10px; }
 .pane-head h2 { font-size: 19px; margin: 0; }
 .cards { display: flex; flex-direction: column; gap: 10px; }
@@ -272,6 +261,59 @@ button { font: inherit; color: inherit; }
 }
 .send-btn:disabled { opacity: .35; }
 .send-btn:not(:disabled):active { background: var(--accent-press); }
+.send-btn.stop { background: var(--bad); }
+.send-btn.stop:not(:disabled):active { background: #c95555; }
+.send-btn svg { width: 20px; height: 20px; }
+.icon-btn.sm { width: 34px; height: 34px; }
+.icon-btn.sm svg { width: 19px; height: 19px; }
+
+/* ---------- composer top row: 実行モード + 履歴 ---------- */
+.crow-top { display: flex; align-items: center; gap: 8px; padding: 0 2px 8px; }
+.modeseg {
+  display: inline-flex; border: 1px solid var(--line); border-radius: 99px;
+  overflow: hidden; background: var(--bg);
+}
+.modeseg button {
+  border: none; background: transparent; color: var(--muted);
+  font-size: 13px; font-weight: 700; padding: 7px 16px; cursor: pointer; min-height: 32px;
+}
+.modeseg button.active { background: var(--raised); color: var(--text); }
+.modeseg #mode-plan.active { color: var(--accent); }
+.crow-top .icon-btn { margin-left: auto; }
+.mode-hint { font-size: 12px; color: var(--accent); font-weight: 600; white-space: nowrap; }
+
+/* ---------- 待機キュー ---------- */
+.queue {
+  display: flex; align-items: center; gap: 8px; margin: 0 2px 8px; padding: 8px 12px;
+  border: 1px dashed var(--line); border-radius: var(--radius-s);
+  font-size: 13px; color: var(--muted); background: var(--bg);
+}
+.queue .qdot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; animation: blink 1.4s steps(1) infinite; }
+.queue .qt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queue button { border: none; background: none; color: var(--muted); font-size: 17px; line-height: 1; padding: 2px 6px; cursor: pointer; }
+
+/* ---------- @言及ポップアップ ---------- */
+.mention {
+  margin: 0 2px 8px; border: 1px solid var(--line); border-radius: var(--radius-s);
+  background: var(--card); overflow: hidden; max-height: 220px; overflow-y: auto;
+}
+.mention button {
+  display: block; width: 100%; text-align: left; border: none; background: none;
+  border-bottom: 1px solid var(--line); padding: 11px 12px; cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; color: var(--text);
+}
+.mention button:last-child { border-bottom: none; }
+.mention button:active { background: var(--raised); }
+
+/* ---------- 履歴シート ---------- */
+.hist { display: flex; flex-direction: column; gap: 8px; max-height: 50dvh; overflow-y: auto; }
+.hist button {
+  text-align: left; border: 1px solid var(--line); background: var(--card);
+  border-radius: var(--radius-s); padding: 11px 12px; cursor: pointer;
+  font-size: 14px; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hist button:active { background: var(--raised); }
 .mic.listening { background: var(--bad); color: #fff; animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .75; } }
 .compose-sub { display: flex; align-items: center; gap: 8px; min-height: 26px; }

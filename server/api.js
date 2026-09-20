@@ -24,6 +24,7 @@ import {
   gitStatus,
   gitDiff,
   gitDiffNumstat,
+  listFiles,
 } from './git.js';
 import { listHarnessMeta, allStatuses } from './harnesses/index.js';
 import {
@@ -34,6 +35,8 @@ import {
   denyJob,
   jobWithLog,
   publishDiff,
+  rewindJob,
+  MODES,
 } from './jobs.js';
 import { subscribe, emit, subscriberCount } from './events.js';
 
@@ -142,6 +145,12 @@ export function buildApp() {
     res.json(await gitStatus(projectDir(p)));
   });
 
+  app.get('/api/projects/:id/files', async (req, res) => {
+    const p = getProject(req.params.id);
+    if (!p) return res.status(404).json({ error: 'not found' });
+    res.json({ projectId: p.id, files: await listFiles(projectDir(p)) });
+  });
+
   app.get('/api/projects/:id/diff', async (req, res) => {
     const p = getProject(req.params.id);
     if (!p) return res.status(404).json({ error: 'not found' });
@@ -163,11 +172,13 @@ export function buildApp() {
   app.post('/api/projects/:id/threads', (req, res) => {
     if (!getProject(req.params.id)) return res.status(404).json({ error: 'not found' });
     const title = (req.body?.title || '').trim() || '新しいスレッド';
+    const mode = MODES.includes(req.body?.mode) ? req.body.mode : 'act';
     const thread = saveThread({
       id: uid('th'),
       projectId: req.params.id,
       title,
       lastHarness: req.body?.harness || 'claude',
+      mode,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -196,9 +207,18 @@ export function buildApp() {
   app.patch('/api/threads/:id', (req, res) => {
     const t = getThread(req.params.id);
     if (!t) return res.status(404).json({ error: 'not found' });
-    const title = (req.body?.title || '').trim().slice(0, 60);
-    if (!title) return res.status(400).json({ error: 'title が必要です' });
-    t.title = title;
+    const patch = {};
+    if (req.body?.title !== undefined) {
+      const title = String(req.body.title || '').trim().slice(0, 60);
+      if (!title) return res.status(400).json({ error: 'title が必要です' });
+      patch.title = title;
+    }
+    if (req.body?.mode !== undefined) {
+      if (!MODES.includes(req.body.mode)) return res.status(400).json({ error: 'mode は act/plan' });
+      patch.mode = req.body.mode;
+    }
+    if (!Object.keys(patch).length) return res.status(400).json({ error: 'title か mode が必要です' });
+    Object.assign(t, patch);
     t.updatedAt = Date.now();
     saveThread(t);
     emit('thread_update', { threadId: t.id, projectId: t.projectId });
@@ -278,6 +298,14 @@ export function buildApp() {
   app.post('/api/jobs/:id/deny', async (req, res) => {
     try {
       res.json(await denyJob(req.params.id));
+    } catch (err) {
+      res.status(400).json({ error: String(err.message || err) });
+    }
+  });
+
+  app.post('/api/jobs/:id/rewind', async (req, res) => {
+    try {
+      res.json(await rewindJob(req.params.id));
     } catch (err) {
       res.status(400).json({ error: String(err.message || err) });
     }

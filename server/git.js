@@ -97,6 +97,56 @@ export async function gitDiff(dir, { statOnly = false } = {}) {
   };
 }
 
+export async function gitHead(dir) {
+  const res = await run('git', ['rev-parse', 'HEAD'], { cwd: dir });
+  return res.code === 0 ? res.stdout.trim() : null;
+}
+
+/** @言及用ファイル一覧。tracked + untracked (除外標準)、件数上限つき。 */
+export async function listFiles(dir, { limit = 2000 } = {}) {
+  const res = await run('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: dir });
+  if (res.code === 0) {
+    return res.stdout.trim().split('\n').filter(Boolean).slice(0, limit);
+  }
+  // 非 git (通常ありえないが): 浅い walk で代替
+  const out = [];
+  const skip = new Set(['node_modules', '.git', '__pycache__', '.venv', 'dist', 'build']);
+  const walk = (base, prefix) => {
+    if (out.length >= limit) return;
+    let entries;
+    try {
+      entries = fs.readdirSync(base, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (out.length >= limit) return;
+      if (e.name.startsWith('.') && e.name !== '.env.example') continue;
+      const rel = prefix ? `${prefix}/${e.name}` : e.name;
+      if (e.isDirectory()) {
+        if (!skip.has(e.name)) walk(path.join(base, e.name), rel);
+      } else if (e.isFile()) {
+        out.push(rel);
+      }
+    }
+  };
+  walk(dir, '');
+  return out;
+}
+
+/** チェックポイント巻き戻し用: 現在の作業を退避して指定 HEAD に戻す。
+ * 退避に失敗 (変更なし等) しても続行し、結果を返す。 */
+export async function stashPush(dir, message) {
+  const res = await run('git', ['stash', 'push', '-u', '-m', message], { cwd: dir });
+  return { ok: res.code === 0, output: (res.stdout + res.stderr).trim().slice(0, 300) };
+}
+
+export async function resetHard(dir, ref) {
+  const res = await run('git', ['reset', '--hard', ref], { cwd: dir });
+  if (res.code !== 0) throw new Error(`reset 失敗: ${(res.stderr || res.stdout).trim().slice(0, 200)}`);
+  return true;
+}
+
 export async function gitDiffNumstat(dir) {
   const res = await run('git', ['diff', '--numstat', 'HEAD'], { cwd: dir });
   if (res.code !== 0) return [];

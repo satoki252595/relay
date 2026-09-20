@@ -126,9 +126,15 @@ index 1111111..2222222 100644
     }
     if (seg[0] === 'projects' && seg[2] === 'threads') {
       if (method === 'GET') return state.threads.filter((t) => t.projectId === seg[1]);
-      const t = { id: uid('th'), projectId: seg[1], title: body.title || '新しいスレッド', lastHarness: body.harness || 'claude', createdAt: now(), updatedAt: now() };
+      const t = { id: uid('th'), projectId: seg[1], title: body.title || '新しいスレッド', lastHarness: body.harness || 'claude', mode: body.mode === 'plan' ? 'plan' : 'act', createdAt: now(), updatedAt: now() };
       state.threads.push(t);
       return t;
+    }
+    if (seg[0] === 'projects' && seg[2] === 'files') {
+      return {
+        projectId: seg[1],
+        files: ['login.js', 'login.css', 'index.html', 'api/auth.js', 'notes/demo-memo.md'],
+      };
     }
     if (seg[0] === 'projects' && seg[2] === 'diff') {
       return {
@@ -145,7 +151,8 @@ index 1111111..2222222 100644
       const t = getThread(seg[1]);
       if (method === 'GET') return { thread: t, messages: msgs(t.id), jobs: state.jobs.filter((j) => j.threadId === t.id) };
       if (method === 'PATCH') {
-        t.title = (body.title || '').slice(0, 60) || t.title;
+        if (body.title !== undefined) t.title = (body.title || '').slice(0, 60) || t.title;
+        if (body.mode === 'plan' || body.mode === 'act') t.mode = body.mode;
         t.updatedAt = now();
         return t;
       }
@@ -180,6 +187,12 @@ index 1111111..2222222 100644
       t.lastHarness = body.harness;
       if (!hits.length) setTimeout(() => streamJob(job), 300);
       return { job, messages: msgs(t.id) };
+    }
+    if (seg[0] === 'jobs' && seg[2] === 'rewind' && method === 'POST') {
+      const job = state.jobs.find((j) => j.id === seg[1]);
+      if (!job) throw new Error('not found');
+      job.rewound = { at: now(), head: 'demo', stashed: true };
+      return { ok: true, head: 'demo', stashed: true };
     }
     if (seg[0] === 'jobs' && seg.length === 3) {
       const job = state.jobs.find((j) => j.id === seg[1]);
