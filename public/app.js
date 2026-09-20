@@ -40,6 +40,13 @@ function toast(msg, kind = '') {
 
 function buzz(pattern) {
   try {
+    // ネイティブ (Capacitor): Haptics プラグイン優先
+    const hap = window.Capacitor?.Plugins?.Haptics;
+    if (hap?.impact) {
+      const heavy = Array.isArray(pattern);
+      hap.impact({ style: heavy ? 'HEAVY' : 'LIGHT' }).catch(() => {});
+      return;
+    }
     if (navigator.vibrate) navigator.vibrate(pattern);
   } catch { /* noop */ }
 }
