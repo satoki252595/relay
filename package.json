@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "start": "node server/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "icons:pwa": "node ops/make-icons.mjs",
+    "icons:ios": "node ops/make-ios-assets.mjs",
+    "cap:sync": "cap sync"
   },
   "dependencies": {
     "@capacitor/cli": "^7.6.9",
