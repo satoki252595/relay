@@ -38,14 +38,34 @@ if [ -n "${API_KEY_ID:-}" ] && [ -n "${API_ISSUER_ID:-}" ] && [ -n "${KEY_P8:-}"
   AUTH_ARGS=(-authenticationKeyPath "$KEY_P8" -authenticationKeyID "$API_KEY_ID" -authenticationKeyIssuerID "$API_ISSUER_ID")
 fi
 
+# 1.5 Capacitor 同梱の PrivacyInfo 空配列を除去 (npm 再取得でも冪等に再適用)
+python3 - <<EOF
+import plistlib
+for p in [
+  "$REPO/node_modules/@capacitor/ios/Capacitor/Capacitor/PrivacyInfo.xcprivacy",
+  "$REPO/node_modules/@capacitor/ios/CapacitorCordova/CapacitorCordova/PrivacyInfo.xcprivacy",
+]:
+  with open(p, "rb") as f:
+    d = plistlib.load(f)
+  if d.get("NSPrivacyAccessedAPITypes") == []:
+    del d["NSPrivacyAccessedAPITypes"]
+    with open(p, "wb") as f:
+      plistlib.dump(d, f)
+    print("patched", p)
+  else:
+    print("ok", p)
+EOF
+
 # 2. archive (プロファイルは -allowProvisioningUpdates で自動作成/更新)
+# STRIP_* は全ターゲット (Pods 含む) に適用され、バイナリ内のビルドマシンパスを除去する
 xcodebuild -workspace ios/App/App.xcworkspace \
   -scheme App -configuration Release \
   -destination 'generic/platform=iOS' \
   -archivePath "$REPO/build/Relay.xcarchive" \
   -allowProvisioningUpdates \
   "${AUTH_ARGS[@]}" \
-  BUILD_SOURCE_COMMIT="$HEAD" archive
+  BUILD_SOURCE_COMMIT="$HEAD" \
+  DEPLOYMENT_POSTPROCESSING=YES STRIP_INSTALLED_PRODUCT=YES archive
 echo "==> ARCHIVE DONE"
 
 # 3. export (App Store Connect 提出用 ipa + DistributionSummary。upload は step 5)

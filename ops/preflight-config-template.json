@@ -34,7 +34,28 @@
       "required_info_values": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "unchecked_info_keys": {},
+      "unchecked_info_keys": {
+        "BuildMachineOSBuild": "Xcode-recorded build host OS version; toolchain-generated, varies by builder.",
+        "CFBundleDevelopmentRegion": "ja; primary development region matching the app primary language.",
+        "CFBundleDisplayName": "Relay; user-visible name under the home-screen icon.",
+        "CFBundleIcons": "Xcode-generated iPhone icon table from the AppIcon asset catalog.",
+        "CFBundleIcons~ipad": "Xcode-generated iPad icon table from the AppIcon asset catalog.",
+        "CFBundleInfoDictionaryVersion": "6.0; fixed Info.plist schema version.",
+        "CFBundleLocalizations": "ja and en; declared localizations matching release metadata.",
+        "CFBundleName": "App; Xcode product name (user-visible name comes from CFBundleDisplayName).",
+        "CFBundleSupportedPlatforms": "iPhoneOS only.",
+        "DTCompiler": "Xcode-recorded clang toolchain identifier.",
+        "LSRequiresIPhoneOS": "true; iOS-only app, cannot run on other platforms.",
+        "MinimumOSVersion": "15.0; Xcode 27 minimum deployment-target floor.",
+        "NSAppTransportSecurity": "NSAllowsLocalNetworking only, for cleartext HTTP to the paired Mac/PC relay server on LAN; no arbitrary loads.",
+        "UIDeviceFamily": "1 and 2; universal iPhone plus iPad build from the Capacitor template.",
+        "UILaunchStoryboardName": "LaunchScreen storyboard from the Capacitor Xcode template.",
+        "UIMainStoryboardFile": "Main storyboard from the Capacitor Xcode template.",
+        "UIRequiredDeviceCapabilities": "arm64 only; matches the single shipped architecture.",
+        "UISupportedInterfaceOrientations": "portrait plus both landscapes on iPhone.",
+        "UISupportedInterfaceOrientations~ipad": "all four orientations on iPad.",
+        "UIViewControllerBasedStatusBarAppearance": "true; Capacitor default status-bar behavior."
+      },
       "policy_reason": "Relay 1.0.0 has no extensions, no background modes, no usage descriptions, and no custom entitlements. Closed-world Info/entitlement values are cross-checked against the signed IPA at binary stage."
     }
   ],

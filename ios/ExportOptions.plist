@@ -14,7 +14,9 @@
 		<string>Relay App Store</string>
 	</dict>
 	<key>uploadSymbols</key>
-	<true/>
+	<false/>
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
 	<key>destination</key>
 	<string>export</string>
 </dict>
