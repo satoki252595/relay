@@ -6,6 +6,13 @@
 	<string>app-store-connect</string>
 	<key>teamID</key>
 	<string>QVUR5T7J46</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>dev.relay.agentchat</key>
+		<string>Relay App Store</string>
+	</dict>
 	<key>uploadSymbols</key>
 	<true/>
 	<key>destination</key>
