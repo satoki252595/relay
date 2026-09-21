@@ -73,8 +73,15 @@ npm run desktop:dist    # 署名+公証つき DMG/ZIP (要: Developer ID 証明�
 
 ## セットアップ（自宅サーバー）
 
+かんたん導入は OS 別手順へ:
+[mac](docs/setup/mac.md) / [Linux](docs/setup/linux.md) / [Windows](docs/setup/windows.md)。
+料金は [料金体系](docs/plan.md) (ローカル実行は無料、VM 実行は提供準備中)。
+GitHub 連携は [GitHub 接続](docs/connections/github.md)。
+
+手動導入:
+
 ```sh
-git clone <this-repo> /opt/relay && cd /opt/relay
+git clone https://github.com/satoki252595/relay.git /opt/relay && cd /opt/relay
 npm install --omit=dev
 cp .env.example .env   # 必要なら編集
 

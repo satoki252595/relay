@@ -33,3 +33,10 @@ function resolveToken() {
 
 export const TOKEN = resolveToken();
 export const TOKEN_WAS_GENERATED = !process.env.RELAY_TOKEN;
+
+// 料金体系: ローカル実行は無料、VM 実行は有料 (現在は提供準備中)。
+export const EXECUTION_TARGETS = [
+  { id: 'local', label: 'ローカル実行', price: '無料', available: true, current: true },
+  { id: 'vm', label: 'VM実行', price: '有料', available: false, note: '提供準備中' },
+];
+export const PLAN = { execution: 'local' };

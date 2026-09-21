@@ -59,6 +59,7 @@
       <button id="connect-go" class="btn primary big">接続する</button>
       <button id="connect-demo" class="btn dashed">デモを見る (サーバー不要)</button>
       <p id="connect-err" class="err" role="alert"></p>
+      <p class="hint">ローカル実行・無料。VM実行 (有料) は提供準備中。</p>
       <p class="hint">閉域 (Tailscale 等) 経由で接続。鍵はホストの公式 CLI 領域にのみ置きます。</p>
     </div>
   </section>
@@ -91,6 +92,7 @@
     <main id="tab-projects" class="tab">
       <div id="projects-pane">
         <div class="pane-head"><h2>プロジェクト</h2></div>
+        <p id="conn-line" class="hintline"></p>
         <div id="project-list" class="cards"></div>
         <button id="project-add" class="btn dashed"><svg><use href="#i-plus"/></svg>新規プロジェクト</button>
       </div>

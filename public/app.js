@@ -225,6 +225,7 @@ function disconnect() {
   localStorage.removeItem('relay_token');
   if (state.es) { state.es.close(); state.es = null; }
   $('connect-token').value = '';
+  $('conn-line').textContent = '';
   $('demo-banner').classList.add('hidden');
   $('view-main').classList.add('hidden');
   $('view-connect').classList.remove('hidden');
@@ -277,6 +278,7 @@ async function enterMain() {
   }
   renderChips();
   await refreshProjects();
+  await refreshConnections();
   openSSE();
   switchTab(state.thread ? 'chat' : 'projects');
   const lastTid = localStorage.getItem('relay_thread');
@@ -316,6 +318,21 @@ function refreshModelHints() {
 }
 
 /* ============ プロジェクト / スレッド ============ */
+async function refreshConnections() {
+  const el = $('conn-line');
+  try {
+    const conns = await api('/api/connections');
+    el.innerHTML = conns.map((c) => {
+      const st = c.authenticated
+        ? `<span class="ok">接続OK${c.user ? ` (${esc(c.user)})` : ''}</span>`
+        : (c.setupHint ? esc(c.setupHint) : '未接続');
+      return `${esc(c.label)}: ${st}`;
+    }).join(' ・ ');
+  } catch {
+    el.textContent = '';
+  }
+}
+
 async function refreshProjects() {
   state.projects = await api('/api/projects');
   const list = $('project-list');

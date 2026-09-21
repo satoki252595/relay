@@ -1,7 +1,8 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TOKEN } from './config.js';
+import { TOKEN, PLAN, EXECUTION_TARGETS } from './config.js';
+import { listConnections } from './connections.js';
 import {
   uid,
   listProjects,
@@ -70,6 +71,7 @@ export function buildApp() {
 
   // --- public ---
   app.get('/api/health', (req, res) => res.json({ ok: true, subs: subscriberCount() }));
+  app.get('/api/plan', (req, res) => res.json({ ...PLAN, targets: EXECUTION_TARGETS }));
   app.post('/api/connect', (req, res) => {
     if (req.body?.token === TOKEN) {
       res.setHeader(
@@ -89,6 +91,10 @@ export function buildApp() {
     const statuses = await allStatuses();
     const byId = Object.fromEntries(statuses.map((s) => [s.id, s]));
     res.json(meta.map((m) => ({ ...m, ...(byId[m.id] || { installed: false }) })));
+  });
+
+  app.get('/api/connections', async (req, res) => {
+    res.json(await listConnections());
   });
 
   // projects
@@ -230,9 +236,12 @@ export function buildApp() {
     try {
       const t = getThread(req.params.id);
       if (!t) return res.status(404).json({ error: 'not found' });
-      const { text, harness, model } = req.body || {};
+      const { text, harness, model, target } = req.body || {};
       if (!text || !text.trim()) return res.status(400).json({ error: 'text が必要です' });
       if (!harness) return res.status(400).json({ error: 'harness が必要です' });
+      if (target && target !== 'local') {
+        return res.status(400).json({ error: 'VM実行は提供準備中です。ローカル実行をご利用ください' });
+      }
       const active = listJobs({ threadId: t.id }).find((j) =>
         ['queued', 'running', 'awaiting_approval'].includes(j.status),
       );
