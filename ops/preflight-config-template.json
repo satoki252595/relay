@@ -27,13 +27,8 @@
       "kind": "app",
       "bundle_id": "dev.relay.agentchat",
       "app_id_prefix": "QVUR5T7J46",
-      "required_entitlements": {
-        "get-task-allow": false,
-        "com.apple.developer.team-identifier": "QVUR5T7J46"
-      },
+      "required_entitlements": {},
       "unchecked_entitlements": {
-        "application-identifier": "Xcode automatic signing composes this from the App ID prefix and bundle ID; exact value verified against the embedded profile at binary stage.",
-        "keychain-access-groups": "Xcode-generated default keychain group; exact value verified against the embedded profile at binary stage.",
         "beta-reports-active": "Xcode adds this for App Store/TestFlight distribution."
       },
       "required_info_values": {
