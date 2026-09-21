@@ -103,7 +103,7 @@ EOF
 nix develop --command python3 "$VALIDATOR" verify --stage binary \
   --format json --output "$BINREP" --config "$BINCFG" --strict-warnings
 echo "==> BINARY STAGE PASSED"
-python3 -c "import json; print('binary_preupload_fingerprint:', json.load(open('$BINREP'))['binary_preupload_fingerprint'])"
+python3 -c "import json; print('binary_preupload_fingerprint:', json.load(open('$BINREP'))['facts']['binary_preupload_fingerprint'])"
 
 # 5. upload (API キーがある場合のみ。なければコマンドを表示して終了)
 if [ -n "${API_KEY_ID:-}" ] && [ -n "${API_ISSUER_ID:-}" ] && [ -n "${KEY_P8:-}" ]; then
