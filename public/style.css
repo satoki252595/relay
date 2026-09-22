@@ -29,7 +29,11 @@ body {
 svg { width: 22px; height: 22px; flex: none; }
 button { font: inherit; color: inherit; }
 .hidden { display: none !important; }
-.view { height: 100dvh; display: flex; flex-direction: column; }
+/* 高さは % 指定にし、Capacitor Keyboard (resize: body) の
+   body 高さ調整に追従させる。100dvh はキーボード出現時に
+   縮まず、コンポーザーがキーボード裏に隠れる。 */
+#app { height: 100%; }
+.view { height: 100%; display: flex; flex-direction: column; }
 .sp { flex: 1; }
 .sub { color: var(--muted); font-size: 13px; }
 .err { color: var(--bad); min-height: 1.4em; font-size: 14px; }
@@ -89,7 +93,7 @@ button { font: inherit; color: inherit; }
 .hintline .ok { color: #7ee2a8; }
 
 /* ---------- appbar / tabs ---------- */
-#view-main { height: 100dvh; }
+#view-main { height: 100%; }
 #appbar { background: var(--panel); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top); }
 .bar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; min-height: 56px; }
 .bar strong { font-size: 17px; }
