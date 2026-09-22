@@ -17,7 +17,9 @@ export const cursor = {
     ];
     if (model) argv.push('--model', model);
     if (resumeSessionId) argv.push('--resume', resumeSessionId);
-    // Safe default: no --force/--yolo. Approval gate lives in Relay.
+    // --trust はディレクトリ信頼の宣言のみ (非対話実行に必須)。
+    // 危険操作の承認は引き続き Relay 側ゲートが行う。--yolo/-f は付けない。
+    argv.push('--trust');
     argv.push(prompt);
     return { cmd: 'cursor-agent', argv, cwd: workdir };
   },

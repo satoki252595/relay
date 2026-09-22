@@ -42,6 +42,7 @@ describe('harness adapters', () => {
     const { cmd, argv } = HARNESSES.cursor.build({ prompt: 'hi', workdir: '/tmp' });
     assert.equal(cmd, 'cursor-agent');
     assert.ok(argv.includes('-p') && argv.includes('stream-json'));
+    assert.ok(argv.includes('--trust'));
     assert.ok(!argv.includes('--force') && !argv.includes('--yolo'));
   });
 
