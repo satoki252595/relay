@@ -1,5 +1,5 @@
 // OpenAI Codex: `codex exec --json` / `codex exec resume <id> <prompt>`
-import { probe, which, genericParse, pickSessionId, extractText, extractToolUse } from './common.js';
+import { probe, which, genericParse } from './common.js';
 
 export const codex = {
   id: 'codex',
@@ -10,7 +10,7 @@ export const codex = {
   build({ prompt, model, resumeSessionId, workdir }) {
     let argv;
     if (resumeSessionId) {
-      argv = ['exec', 'resume', resumeSessionId, prompt];
+      argv = ['exec', 'resume', '--json', '--skip-git-repo-check', resumeSessionId, prompt];
     } else {
       argv = ['exec', '--json', '--sandbox', 'workspace-write', '--skip-git-repo-check', prompt];
     }
@@ -23,16 +23,23 @@ export const codex = {
 
   parseLine(line) {
     const parsed = genericParse(line);
-    if (!parsed || parsed.type === 'log') return parsed ? { ...parsed, stream: 'stdout' } : null;
+    if (!parsed || parsed.type === 'log') return parsed;
     const obj = parsed.raw;
-    const sessionId = pickSessionId(obj);
-    const tool = extractToolUse(obj);
-    const texts = extractText(obj);
-    const t = String(obj.type || obj.event || '');
-    if (/item\.completed|turn\.completed|task\.complete|result/i.test(t)) {
-      return { type: 'result', sessionId, text: texts.join('\n'), isError: false };
+    const t = String(obj.type || '');
+    const sessionId = t === 'thread.started' ? obj.thread_id || null : null;
+    const item = obj.item && typeof obj.item === 'object' ? obj.item : null;
+    if (t === 'item.started' && item?.type === 'command_execution') {
+      return { type: 'tool', sessionId, tool: { name: 'shell', input: item.command ?? '' } };
     }
-    return { type: 'event', sessionId, tool, texts, rawType: t || 'unknown' };
+    if (t === 'item.completed' && item?.type === 'agent_message') {
+      return { type: 'message', sessionId, text: String(item.text || '') };
+    }
+    if (t === 'turn.failed' || t === 'error') {
+      const msg = obj.error?.message || obj.message || 'エラー';
+      return { type: 'result', sessionId, text: `エラー: ${msg}`, isError: true };
+    }
+    // thread/turn の開始・完了、reasoning、コマンド出力など
+    return { type: 'skip', sessionId };
   },
 
   async status() {

@@ -28,8 +28,15 @@ export function probe(cmd, args, timeoutMs = 10000) {
   });
 }
 
-// Best-effort extraction of text/tool/session info from one stdout line.
-// Unknown shapes fall back to raw text so the UI still shows progress.
+// Parse one stdout line. Non-JSON lines become { type: 'log' } (job log only, not chat text).
+//
+// Adapters normalize harness events into:
+//   { type: 'skip' }                     — lifecycle/system noise (sessionId may still be set)
+//   { type: 'delta', text }              — streaming fragment of the current answer
+//   { type: 'message', text }            — a complete assistant message
+//   { type: 'result', text, isError }    — final answer of the run
+//   { type: 'tool', tool: {name, input} } — tool/command invocation (feeds the risk gate)
+//   { type: 'log', text }                — diagnostics, kept out of the chat
 export function genericParse(line) {
   const trimmed = line.trim();
   if (!trimmed) return null;
@@ -41,6 +48,24 @@ export function genericParse(line) {
     return { type: 'log', text: line };
   }
   return { type: 'json', raw: obj };
+}
+
+// Text blocks of an Anthropic-style message ({ content: [{type:'text', text}] }).
+export function contentText(message) {
+  const content = message?.content;
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return content
+    .filter((b) => b && b.type === 'text' && typeof b.text === 'string')
+    .map((b) => b.text)
+    .join('');
+}
+
+export function contentToolUse(message) {
+  const content = message?.content;
+  if (!Array.isArray(content)) return null;
+  const block = content.find((b) => b && b.type === 'tool_use');
+  return block ? { name: String(block.name || 'tool'), input: block.input ?? '' } : null;
 }
 
 export function pickSessionId(obj) {
@@ -60,63 +85,5 @@ export function pickSessionId(obj) {
   }
   if (obj.payload && typeof obj.payload === 'object') return pickSessionId(obj.payload);
   if (obj.event && typeof obj.event === 'object') return pickSessionId(obj.event);
-  return null;
-}
-
-// Walk a parsed JSON event and extract human-readable text fragments.
-export function extractText(obj, depth = 0) {
-  if (obj == null || depth > 6) return [];
-  if (typeof obj === 'string') return [];
-  if (Array.isArray(obj)) return obj.flatMap((v) => extractText(v, depth + 1));
-  if (typeof obj !== 'object') return [];
-  const out = [];
-  const t = obj.type || obj.event || obj.kind || '';
-  const looksTextual =
-    /message|text|output|result|response|delta|content|reasoning|thinking/i.test(String(t)) ||
-    obj.role === 'assistant';
-  for (const [k, v] of Object.entries(obj)) {
-    if (typeof v === 'string' && /^(text|content|message|output|result|response|delta|summary)$/i.test(k)) {
-      if (v.trim()) out.push(v);
-    } else if (k === 'content' && Array.isArray(v)) {
-      for (const block of v) {
-        if (block && typeof block === 'object' && typeof block.text === 'string' && block.text.trim()) {
-          out.push(block.text);
-        }
-      }
-    } else if (v && typeof v === 'object') {
-      if (looksTextual || depth < 2) out.push(...extractText(v, depth + 1));
-    }
-  }
-  return out;
-}
-
-export function extractToolUse(obj, depth = 0) {
-  if (!obj || typeof obj !== 'object' || depth > 5) return null;
-  if (Array.isArray(obj)) {
-    for (const v of obj) {
-      const hit = extractToolUse(v, depth + 1);
-      if (hit) return hit;
-    }
-    return null;
-  }
-  const t = String(obj.type || obj.event || obj.kind || '');
-  if (/tool[_-]?use|function[_-]?call|exec|command/i.test(t)) {
-    const name = obj.name || obj.tool || obj.command || t;
-    const input = obj.input ?? obj.arguments ?? obj.args ?? obj.command ?? '';
-    return { name: String(name), input };
-  }
-  if (obj.content && Array.isArray(obj.content)) {
-    for (const block of obj.content) {
-      if (block && block.type === 'tool_use') {
-        return { name: String(block.name || 'tool'), input: block.input ?? '' };
-      }
-    }
-  }
-  for (const v of Object.values(obj)) {
-    if (v && typeof v === 'object') {
-      const hit = extractToolUse(v, depth + 1);
-      if (hit) return hit;
-    }
-  }
   return null;
 }

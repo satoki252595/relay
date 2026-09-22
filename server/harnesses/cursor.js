@@ -1,6 +1,6 @@
 // Cursor Agent: `cursor-agent -p --output-format stream-json`
 // NOTE: binary is `cursor-agent` (the bare `agent` name belongs to other tools).
-import { probe, which, genericParse, pickSessionId, extractText, extractToolUse } from './common.js';
+import { probe, which, genericParse, pickSessionId, contentText } from './common.js';
 
 export const cursor = {
   id: 'cursor',
@@ -26,16 +26,35 @@ export const cursor = {
 
   parseLine(line) {
     const parsed = genericParse(line);
-    if (!parsed || parsed.type === 'log') return parsed ? { ...parsed, stream: 'stdout' } : null;
+    if (!parsed || parsed.type === 'log') return parsed;
     const obj = parsed.raw;
     const sessionId = pickSessionId(obj);
-    const tool = extractToolUse(obj);
-    const texts = extractText(obj);
-    const t = String(obj.type || obj.event || '');
-    if (/result|complete|final/i.test(t)) {
-      return { type: 'result', sessionId, text: texts.join('\n'), isError: false };
+    const t = String(obj.type || '');
+    if (t === 'result') {
+      return {
+        type: 'result',
+        sessionId,
+        text: typeof obj.result === 'string' ? obj.result : '',
+        isError: obj.is_error === true,
+      };
     }
-    return { type: 'event', sessionId, tool, texts, rawType: t || 'unknown' };
+    if (t === 'assistant') {
+      // --stream-partial-output: 断片は timestamp_ms 付き、最後に全文が timestamp_ms なしで届く
+      const text = contentText(obj.message);
+      return { type: obj.timestamp_ms != null ? 'delta' : 'message', sessionId, text };
+    }
+    if (t === 'tool_call' && obj.subtype === 'started' && obj.tool_call && typeof obj.tool_call === 'object') {
+      const [key, call] = Object.entries(obj.tool_call)[0] || [];
+      if (key) {
+        return {
+          type: 'tool',
+          sessionId,
+          tool: { name: key.replace(/ToolCall$/, ''), input: call?.args ?? '' },
+        };
+      }
+    }
+    // system/init、user (プロンプト反響)、thinking、tool_call completed など
+    return { type: 'skip', sessionId };
   },
 
   async status() {

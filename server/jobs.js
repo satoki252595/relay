@@ -185,7 +185,8 @@ export async function startJob(jobId, { resumed = false } = {}) {
   saveJob(job);
   emit('job_update', { job });
 
-  const child = spawn(cmd, argv, { cwd: cwd || dir });
+  // stdin は閉じる (開いたままだと claude は 3 秒待って警告し、codex は EOF まで待ち続ける)
+  const child = spawn(cmd, argv, { cwd: cwd || dir, stdio: ['ignore', 'pipe', 'pipe'] });
   running.set(jobId, child);
   appendJobLog(jobId, `$ ${cmd} ${argv.map((a) => (a.length > 120 ? a.slice(0, 120) + '…' : a)).join(' ')}`);
 
@@ -201,8 +202,12 @@ export async function startJob(jobId, { resumed = false } = {}) {
   };
   armIdleTimer();
 
-  let buffer = '';
+  const buffers = { stdout: '', stderr: '' };
   let assistantText = assistantMsg.text || '';
+  // 現在の回答区間の開始位置。delta はここに連結し、message/result で確定させる。
+  let segmentStart = assistantText.length;
+  // stderr・非 JSON 行はチャットに出さず、失敗時の説明用に末尾だけ保持する。
+  const diagTail = [];
   let lastFlush = 0;
 
   const flush = (force = false) => {
@@ -243,29 +248,58 @@ export async function startJob(jobId, { resumed = false } = {}) {
         escalateMidRun(jobId, verdict.hits, snapshot).catch(() => {});
         return;
       }
-      assistantText += `\n> 実行: \`${event.tool.name}\`\n`;
+      assistantText += `${assistantText && !assistantText.endsWith('\n') ? '\n' : ''}\n> 実行: \`${event.tool.name}\`\n`;
+      segmentStart = assistantText.length;
       flush();
       return;
     }
-    const texts =
-      event.type === 'result'
-        ? [event.text || '']
-        : event.texts || (event.text ? [event.text] : []);
-    const chunk = texts.filter(Boolean).join('\n');
-    if (chunk) {
-      assistantText += (assistantText && !assistantText.endsWith('\n') ? '\n' : '') + chunk + '\n';
-      flush();
+    if (event.type === 'log') {
+      diagTail.push(String(event.text || '').trim());
+      if (diagTail.length > 12) diagTail.shift();
+      return;
     }
-    if (event.type === 'result' && event.isError) {
-      appendJobLog(jobId, '[harness] result reported error');
+    if (event.type === 'delta') {
+      if (event.text) {
+        assistantText += event.text;
+        flush();
+      }
+      return;
     }
+    if (event.type === 'message' || event.type === 'result') {
+      if (settleSegment(event.text)) flush();
+      if (event.type === 'result' && event.isError) {
+        appendJobLog(jobId, '[harness] result reported error');
+      }
+    }
+  };
+
+  // 部分出力・確定メッセージ・最終 result が同じ内容を繰り返すため、重複を除いて区間を確定する。
+  const settleSegment = (text) => {
+    const full = String(text || '').trim();
+    const segment = assistantText.slice(segmentStart).trim();
+    let changed = false;
+    if (!full || segment === full || assistantText.trimEnd().endsWith(full)) {
+      // 既に表示済み
+    } else if (segment) {
+      assistantText = assistantText.slice(0, segmentStart) + full;
+      changed = true;
+    } else {
+      assistantText += (assistantText && !assistantText.endsWith('\n') ? '\n' : '') + full;
+      changed = true;
+    }
+    if (assistantText && !assistantText.endsWith('\n')) {
+      assistantText += '\n';
+      changed = true;
+    }
+    segmentStart = assistantText.length;
+    return changed;
   };
 
   const feed = (stream) => (data) => {
     armIdleTimer();
-    buffer += data.toString();
-    const lines = buffer.split('\n');
-    buffer = lines.pop();
+    buffers[stream] += data.toString();
+    const lines = buffers[stream].split('\n');
+    buffers[stream] = lines.pop();
     for (const line of lines) {
       if (line.trim()) onLine(line, stream);
     }
@@ -276,7 +310,9 @@ export async function startJob(jobId, { resumed = false } = {}) {
   child.on('close', async (code) => {
     if (idleTimer) clearTimeout(idleTimer);
     running.delete(jobId);
-    if (buffer.trim()) onLine(buffer.trim(), 'stdout');
+    for (const stream of ['stdout', 'stderr']) {
+      if (buffers[stream].trim()) onLine(buffers[stream].trim(), stream);
+    }
     const current = getJob(jobId);
     if (!current) return;
     // escalateMidRun / interruptJob may have already re-stated the job.
@@ -287,12 +323,17 @@ export async function startJob(jobId, { resumed = false } = {}) {
       return;
     }
     current.status = code === 0 ? 'done' : 'error';
-    if (code !== 0 && !current.error) current.error = `終了コード ${code}`;
+    if (code !== 0 && !current.error) {
+      current.error = `終了コード ${code}${diagTail.length ? `: ${diagTail.at(-1)}` : ''}`;
+    }
     current.updatedAt = Date.now();
     current.endedAt = Date.now();
     saveJob(current);
 
-    assistantMsg.text = assistantText || '(出力なし)';
+    // 本文が空で失敗した場合だけ、診断出力 (stderr 等) の末尾を見せる
+    assistantMsg.text =
+      assistantText ||
+      (code !== 0 && diagTail.length ? `実行に失敗しました:\n\n${diagTail.join('\n')}\n` : '(出力なし)');
     assistantMsg.streaming = false;
     updateMessage(job.threadId, assistantMsg);
     emit('message_append', {

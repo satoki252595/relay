@@ -1,5 +1,5 @@
 // Anthropic Claude Code: `claude -p --output-format stream-json`
-import { probe, which, genericParse, pickSessionId, extractText, extractToolUse } from './common.js';
+import { probe, which, genericParse, pickSessionId, contentText, contentToolUse } from './common.js';
 
 export const claude = {
   id: 'claude',
@@ -17,21 +17,25 @@ export const claude = {
 
   parseLine(line) {
     const parsed = genericParse(line);
-    if (!parsed || parsed.type === 'log') return parsed ? { ...parsed, stream: 'stdout' } : null;
+    if (!parsed || parsed.type === 'log') return parsed;
     const obj = parsed.raw;
     const sessionId = pickSessionId(obj);
-    const tool = extractToolUse(obj);
-    const texts = extractText(obj);
     const t = String(obj.type || '');
     if (t === 'result') {
       return {
         type: 'result',
         sessionId,
-        text: typeof obj.result === 'string' ? obj.result : texts.join('\n'),
+        text: typeof obj.result === 'string' ? obj.result : '',
         isError: obj.is_error === true,
       };
     }
-    return { type: 'event', sessionId, tool, texts, rawType: t || 'unknown' };
+    if (t === 'assistant') {
+      const tool = contentToolUse(obj.message);
+      if (tool) return { type: 'tool', sessionId, tool };
+      return { type: 'message', sessionId, text: contentText(obj.message) };
+    }
+    // system (init / hook_started / hook_response の `{}`)、user (ツール結果・プロンプト)、rate_limit_event など
+    return { type: 'skip', sessionId };
   },
 
   async status() {

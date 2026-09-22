@@ -1,5 +1,5 @@
 // Meta Muse: `muse exec --json`
-import { probe, which, genericParse, pickSessionId, extractText, extractToolUse } from './common.js';
+import { probe, which, genericParse } from './common.js';
 
 export const muse = {
   id: 'muse',
@@ -21,16 +21,25 @@ export const muse = {
 
   parseLine(line) {
     const parsed = genericParse(line);
-    if (!parsed || parsed.type === 'log') return parsed ? { ...parsed, stream: 'stdout' } : null;
+    if (!parsed || parsed.type === 'log') return parsed;
     const obj = parsed.raw;
-    const sessionId = pickSessionId(obj);
-    const tool = extractToolUse(obj);
-    const texts = extractText(obj);
-    const t = String(obj.type || obj.event || '');
-    if (/result|complete|final/i.test(t)) {
-      return { type: 'result', sessionId, text: texts.join('\n'), isError: false };
+    const sessionId = obj.stream?.kind === 'session' && typeof obj.stream.id === 'string' ? obj.stream.id : null;
+    const pt = String(obj.payload_type || '');
+    const p = obj.payload || {};
+    if (pt === 'run.output.delta') return { type: 'delta', sessionId, text: String(p.text || '') };
+    if (pt.startsWith('run.terminal.')) {
+      return { type: 'result', sessionId, text: String(p.text || ''), isError: p.terminal !== 'completed' };
     }
-    return { type: 'event', sessionId, tool, texts, rawType: t || 'unknown' };
+    if (pt === 'tool.result') {
+      // muse は実行前のコマンドを流さないため、結果に含まれる command で事後検出する
+      let command = null;
+      try {
+        command = JSON.parse(p.text)?.command ?? null;
+      } catch {}
+      if (typeof command === 'string') return { type: 'tool', sessionId, tool: { name: 'bash', input: command } };
+    }
+    // task.lifecycle.* (ストリーム試行ステータス等)、turn.input.user (プロンプト反響) など
+    return { type: 'skip', sessionId };
   },
 
   async status() {
