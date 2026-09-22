@@ -59,6 +59,7 @@
       <button id="connect-go" class="btn primary big">接続する</button>
       <button id="connect-demo" class="btn dashed">デモを見る (サーバー不要)</button>
       <p id="connect-err" class="err" role="alert"></p>
+      <div id="connect-diag" class="diag" aria-live="polite"></div>
       <p class="hint">ローカル実行・無料。VM実行 (有料) は提供準備中。</p>
       <p class="hint">閉域 (Tailscale 等) 経由で接続。鍵はホストの公式 CLI 領域にのみ置きます。</p>
     </div>
@@ -177,6 +178,7 @@
 
   <div id="toasts" class="toasts" aria-live="assertive"></div>
 </div>
+<script src="diagnose.js"></script>
 <script src="demo.js"></script>
 <script src="app.js"></script>
 <script>

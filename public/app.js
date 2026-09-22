@@ -198,13 +198,19 @@ async function connect() {
   state.token = $('connect-token').value.trim();
   $('connect-err').textContent = '';
   $('connect-go').disabled = true;
+  $('connect-diag').innerHTML = '';
   try {
-    const res = await fetch(state.base + '/api/connect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: state.token }),
+    const result = await window.RelayDiagnose.diagnose({
+      base: state.base,
+      token: state.token,
+      pageProtocol: location.protocol,
     });
-    if (!res.ok) throw new Error('トークンが違います。ホストの data/.token を確認してください');
+    if (!result.ok) {
+      const failed = result.checks.find((c) => !c.ok);
+      $('connect-err').textContent = `${failed.label}: ${failed.detail}`;
+      renderDiag(result);
+      return;
+    }
     localStorage.setItem('relay_base', state.base);
     localStorage.setItem('relay_token', state.token);
     ensureNotifyPermission();
@@ -216,6 +222,14 @@ async function connect() {
   }
 }
 
+function renderDiag({ checks, hints }) {
+  const rows = checks
+    .map((c) => `<li class="${c.ok ? 'ok' : 'ng'}"><span>${c.ok ? '✓' : '✗'}</span>${esc(c.label)}</li>`)
+    .join('');
+  const tips = hints.length ? `<p>確認してください:</p><ul class="tips">${hints.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>` : '';
+  $('connect-diag').innerHTML = `<ul class="checks">${rows}</ul>${tips}`;
+}
+
 function disconnect() {
   state.token = '';
   state.thread = null;
@@ -225,6 +239,7 @@ function disconnect() {
   localStorage.removeItem('relay_token');
   if (state.es) { state.es.close(); state.es = null; }
   $('connect-token').value = '';
+  $('connect-diag').innerHTML = '';
   $('conn-line').textContent = '';
   $('demo-banner').classList.add('hidden');
   $('view-main').classList.add('hidden');

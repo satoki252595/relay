@@ -1,6 +1,6 @@
 // Relay shell cache. Same-origin static assets only; API/SSE は素通り。
-const CACHE = 'relay-shell-v1';
-const SHELL = ['./', './index.html', './style.css', './app.js', './manifest.webmanifest'];
+const CACHE = 'relay-shell-v2';
+const SHELL = ['./', './index.html', './style.css', './diagnose.js', './app.js', './manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

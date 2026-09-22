@@ -37,6 +37,15 @@ button { font: inherit; color: inherit; }
 .sp { flex: 1; }
 .sub { color: var(--muted); font-size: 13px; }
 .err { color: var(--bad); min-height: 1.4em; font-size: 14px; }
+.diag { font-size: 13px; text-align: left; }
+.diag:empty { display: none; }
+.diag ul { margin: 4px 0; padding: 0; list-style: none; }
+.diag .checks li { display: flex; gap: 8px; }
+.diag .checks .ok span { color: var(--good); }
+.diag .checks .ng span { color: var(--bad); }
+.diag p { color: var(--muted); margin: 8px 0 2px; }
+.diag .tips li { padding-left: 1em; text-indent: -1em; }
+.diag .tips li::before { content: '・'; }
 
 /* ---------- buttons ---------- */
 .btn {
