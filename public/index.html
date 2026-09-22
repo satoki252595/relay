@@ -48,11 +48,11 @@
       <h1>Relay</h1>
       <p class="sub">自宅サーバー上の公式 CLI を、スマホのチャットから使う</p>
       <label class="field">サーバー URL
-        <input id="connect-url" type="url" inputmode="url" autocomplete="url" placeholder="https://homeserver.ts.net">
+        <input id="connect-url" type="url" inputmode="url" autocomplete="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://homeserver.ts.net">
       </label>
       <label class="field">トークン
         <span class="token-row">
-          <input id="connect-token" type="password" autocomplete="current-password" placeholder="ホストの data/.token">
+          <input id="connect-token" type="password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ホストの data/.token">
           <button id="connect-peek" class="icon-btn" aria-label="トークン表示切替"><svg><use href="#i-eye"/></svg></button>
         </span>
       </label>
@@ -91,7 +91,7 @@
     <!-- プロジェクトタブ -->
     <main id="tab-projects" class="tab">
       <div id="projects-pane">
-        <div class="pane-head"><h2>プロジェクト</h2></div>
+        <div class="pane-head"><h2>プロジェクト</h2><button id="push-toggle" class="mini-btn hidden" aria-label="完了通知の切替">通知ON</button></div>
         <p id="conn-line" class="hintline"></p>
         <div id="project-list" class="cards"></div>
         <button id="project-add" class="btn dashed"><svg><use href="#i-plus"/></svg>新規プロジェクト</button>

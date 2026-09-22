@@ -133,6 +133,8 @@ button { font: inherit; color: inherit; }
 #tab-projects { padding: 12px 14px 24px; max-width: 720px; margin: 0 auto; width: 100%; }
 .pane-head { display: flex; align-items: center; margin: 4px 0 10px; }
 .pane-head h2 { font-size: 19px; margin: 0; }
+.mini-btn { margin-left: auto; font-size: 12px; padding: 5px 10px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; }
 .cards { display: flex; flex-direction: column; gap: 10px; }
 .pcard {
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-m);

@@ -40,3 +40,10 @@ export const EXECUTION_TARGETS = [
   { id: 'vm', label: 'VM実行', price: '有料', available: false, note: '提供準備中' },
 ];
 export const PLAN = { execution: 'local' };
+
+// APNs 完了通知 (未設定なら通知なしで動作)。開発ビルドの検証時は APNS_PRODUCTION=0。
+export const APNS_KEY_PATH = process.env.APNS_KEY_P8 || '';
+export const APNS_KEY_ID = process.env.APNS_KEY_ID || '';
+export const APNS_TEAM_ID = process.env.APNS_TEAM_ID || '';
+export const APNS_TOPIC = process.env.APNS_TOPIC || 'dev.relay.agentchat';
+export const APNS_PRODUCTION = process.env.APNS_PRODUCTION !== '0';

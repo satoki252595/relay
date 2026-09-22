@@ -1,8 +1,11 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TOKEN, PLAN, EXECUTION_TARGETS } from './config.js';
+import { TOKEN, PLAN, EXECUTION_TARGETS, APNS_PRODUCTION } from './config.js';
 import { listConnections } from './connections.js';
+import {
+  isPushConfigured, listPushTokens, registerPushToken, unregisterPushToken,
+} from './push.js';
 import {
   uid,
   listProjects,
@@ -95,6 +98,24 @@ export function buildApp() {
 
   app.get('/api/connections', async (req, res) => {
     res.json(await listConnections());
+  });
+
+  app.get('/api/push/status', (req, res) => {
+    res.json({ configured: isPushConfigured(), production: APNS_PRODUCTION, tokens: listPushTokens().length });
+  });
+
+  app.post('/api/push-tokens', (req, res) => {
+    try {
+      const n = registerPushToken(req.body?.token, req.body?.platform);
+      res.json({ ok: true, tokens: n, configured: isPushConfigured() });
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/push-tokens', (req, res) => {
+    const n = unregisterPushToken(req.body?.token);
+    res.json({ ok: true, tokens: n });
   });
 
   // projects

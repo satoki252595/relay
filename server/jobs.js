@@ -20,8 +20,14 @@ import { getHarness } from './harnesses/index.js';
 import { classifyPrompt, classifyToolCall } from './risk.js';
 import { gitDiff, gitDiffNumstat, projectDir, gitHead, stashPush, resetHard } from './git.js';
 import { emit } from './events.js';
+import { notifyJob } from './push.js';
 
 const running = new Map(); // jobId -> child process
+
+function pushSoon(job, event) {
+  const title = getThread(job.threadId)?.title;
+  notifyJob(job, event, title).catch(() => {});
+}
 
 export const MODES = ['act', 'plan'];
 export const PLAN_PREFIX =
@@ -95,6 +101,7 @@ export function createJob({ threadId, projectId, prompt, harness, model }) {
   if (job.status === 'awaiting_approval') {
     emit('approval_request', { job, threadId, projectId });
     emit('job_update', { job });
+    pushSoon(job, 'awaiting_approval');
   } else {
     startJob(job.id).catch((err) => failJob(job.id, String(err)));
   }
@@ -110,6 +117,7 @@ async function failJob(jobId, error) {
   job.endedAt = Date.now();
   saveJob(job);
   emit('job_update', { job });
+  pushSoon(job, 'error');
 }
 
 export async function startJob(jobId, { resumed = false } = {}) {
@@ -277,6 +285,7 @@ export async function startJob(jobId, { resumed = false } = {}) {
       streaming: false,
     });
     emit('job_update', { job: current });
+    pushSoon(current, current.status === 'done' ? 'done' : 'error');
     await publishDiff(job.projectId);
   });
 
@@ -319,6 +328,7 @@ async function escalateMidRun(jobId, hits, evidence) {
     updateMessage(job.threadId, msg);
   }
   emit('job_update', { job });
+  pushSoon(job, 'awaiting_approval');
   emit('approval_request', { job, threadId: job.threadId, projectId: job.projectId });
 }
 

@@ -15,6 +15,7 @@
     "desktop:dist": "electron-builder --config mac/builder.json"
   },
   "dependencies": {
+    "@capacitor/push-notifications": "7.0.7",
     "express": "^4.21.2"
   },
   "engines": {

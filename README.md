@@ -77,6 +77,7 @@ npm run desktop:dist    # 署名+公証つき DMG/ZIP (要: Developer ID 証明�
 [mac](docs/setup/mac.md) / [Linux](docs/setup/linux.md) / [Windows](docs/setup/windows.md)。
 料金は [料金体系](docs/plan.md) (ローカル実行は無料、VM 実行は提供準備中)。
 GitHub 連携は [GitHub 接続](docs/connections/github.md)。
+完了通知は [プッシュ通知設定](docs/setup/push-notifications.md)。
 
 手動導入:
 

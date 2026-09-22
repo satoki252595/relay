@@ -243,6 +243,7 @@ async function enterDemo() {
   );
   state.harnesses = await api('/api/harnesses');
   renderChips();
+  renderPushToggle();
   await refreshProjects();
   setConn('ok');
   await openThread('th_demo1', { silent: true });
@@ -279,6 +280,7 @@ async function enterMain() {
   renderChips();
   await refreshProjects();
   await refreshConnections();
+  await initPush();
   openSSE();
   switchTab(state.thread ? 'chat' : 'projects');
   const lastTid = localStorage.getItem('relay_thread');
@@ -318,6 +320,60 @@ function refreshModelHints() {
 }
 
 /* ============ プロジェクト / スレッド ============ */
+/* ---------- push 完了通知 (ネイティブのみ) ---------- */
+let pushBound = false;
+
+function pushPlugin() {
+  if (!window.Capacitor?.isNativePlatform?.() || state.demo) return null;
+  return window.Capacitor.Plugins?.PushNotifications || null;
+}
+
+function renderPushToggle() {
+  const b = $('push-toggle');
+  const native = !!window.Capacitor?.isNativePlatform?.() && !state.demo;
+  b.classList.toggle('hidden', !native);
+  b.textContent = localStorage.getItem('relay_push') === 'off' ? '通知OFF' : '通知ON';
+}
+
+async function openPushThread(threadId) {
+  try {
+    if (!state.projects.length) await refreshProjects();
+    switchTab('chat');
+    await openThread(threadId);
+  } catch { /* 古いタップは無視 */ }
+}
+
+async function initPush() {
+  renderPushToggle();
+  const Push = pushPlugin();
+  if (!Push || localStorage.getItem('relay_push') === 'off') return;
+  if (!pushBound) {
+    pushBound = true;
+    await Push.addListener('registration', async (t) => {
+      state.pushToken = t.value;
+      try {
+        await api('/api/push-tokens', { method: 'POST', body: JSON.stringify({ token: t.value }) });
+      } catch { toast('通知の登録に失敗', 'bad'); }
+    });
+    await Push.addListener('registrationError', () => toast('通知の登録に失敗', 'bad'));
+    await Push.addListener('pushNotificationReceived', (n) => {
+      toast(`${n.title || 'Relay'}${n.body ? `: ${n.body}` : ''}`);
+    });
+    await Push.addListener('pushNotificationActionPerformed', (a) => {
+      const d = a?.notification?.data || {};
+      if (d.threadId && state.token && !state.demo) void openPushThread(d.threadId);
+    });
+  }
+  try {
+    const perm = await Push.requestPermissions();
+    if (perm.receive === 'granted') await Push.register();
+    else {
+      localStorage.setItem('relay_push', 'off');
+      renderPushToggle();
+    }
+  } catch { /* web 等の非対応環境 */ }
+}
+
 async function refreshConnections() {
   const el = $('conn-line');
   try {
@@ -416,12 +472,12 @@ function closeSheet() {
 function sheetNewProject() {
   openSheet(`
     <h3>新規プロジェクト</h3>
-    <label class="field">名前<input id="np-name" type="text" maxlength="60" placeholder="my-app"></label>
+    <label class="field">名前<input id="np-name" type="text" maxlength="60" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="my-app"></label>
     <div class="seg-row" role="radiogroup">
       <button id="np-empty" class="active">空フォルダ作成</button>
       <button id="np-clone">git clone</button>
     </div>
-    <label class="field hidden" id="np-url-wrap">リポジトリ URL<input id="np-url" type="text" inputmode="url" placeholder="https://github.com/org/repo.git"></label>
+    <label class="field hidden" id="np-url-wrap">リポジトリ URL<input id="np-url" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://github.com/org/repo.git"></label>
     <p id="np-err" class="err"></p>
     <button id="np-go" class="btn primary">作成</button>`);
   let mode = 'empty';
@@ -1187,6 +1243,18 @@ function init() {
   });
   $('mode-act').onclick = () => setMode('act');
   $('mode-plan').onclick = () => setMode('plan');
+  $('push-toggle').onclick = async () => {
+    const off = localStorage.getItem('relay_push') !== 'off';
+    localStorage.setItem('relay_push', off ? 'off' : 'on');
+    renderPushToggle();
+    if (!state.token || state.demo) return;
+    if (off && state.pushToken) {
+      try {
+        await api('/api/push-tokens', { method: 'DELETE', body: JSON.stringify({ token: state.pushToken }) });
+      } catch { /* best effort */ }
+    }
+    if (!off) void initPush();
+  };
   $('btn-history').onclick = sheetHistory;
   $('queue-cancel').onclick = cancelQueue;
   $('diff-rewind').onclick = doRewind;
