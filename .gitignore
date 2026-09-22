@@ -10,3 +10,4 @@ dist/
 ios/App/*.xcworkspace/xcuserdata/
 ios/App/*.xcodeproj/xcuserdata/
 DerivedData/
+*.p8

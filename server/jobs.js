@@ -21,6 +21,7 @@ import { classifyPrompt, classifyToolCall } from './risk.js';
 import { gitDiff, gitDiffNumstat, projectDir, gitHead, stashPush, resetHard } from './git.js';
 import { emit } from './events.js';
 import { notifyJob } from './push.js';
+import { HARNESS_IDLE_TIMEOUT_MS } from './config.js';
 
 const running = new Map(); // jobId -> child process
 
@@ -188,6 +189,18 @@ export async function startJob(jobId, { resumed = false } = {}) {
   running.set(jobId, child);
   appendJobLog(jobId, `$ ${cmd} ${argv.map((a) => (a.length > 120 ? a.slice(0, 120) + '…' : a)).join(' ')}`);
 
+  // 無応答保護: stdout/stderr が一定時間止まったら詰んだプロセスとみなして kill する。
+  let idleTimer = null;
+  const armIdleTimer = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    if (!(HARNESS_IDLE_TIMEOUT_MS > 0)) return;
+    idleTimer = setTimeout(() => {
+      timeoutJob(jobId, HARNESS_IDLE_TIMEOUT_MS).catch(() => {});
+    }, HARNESS_IDLE_TIMEOUT_MS);
+    idleTimer.unref?.();
+  };
+  armIdleTimer();
+
   let buffer = '';
   let assistantText = assistantMsg.text || '';
   let lastFlush = 0;
@@ -249,6 +262,7 @@ export async function startJob(jobId, { resumed = false } = {}) {
   };
 
   const feed = (stream) => (data) => {
+    armIdleTimer();
     buffer += data.toString();
     const lines = buffer.split('\n');
     buffer = lines.pop();
@@ -260,13 +274,16 @@ export async function startJob(jobId, { resumed = false } = {}) {
   child.stderr.on('data', feed('stderr'));
 
   child.on('close', async (code) => {
+    if (idleTimer) clearTimeout(idleTimer);
     running.delete(jobId);
     if (buffer.trim()) onLine(buffer.trim(), 'stdout');
     const current = getJob(jobId);
     if (!current) return;
     // escalateMidRun / interruptJob may have already re-stated the job.
+    // 確定済み (注記付き・streaming=false) のメッセージは上書きしない。
     if (current.status !== 'running') {
-      flush(true);
+      const stored = listMessages(job.threadId).find((m) => m.id === assistantMsg.id);
+      if (stored?.streaming !== false) flush(true);
       return;
     }
     current.status = code === 0 ? 'done' : 'error';
@@ -290,6 +307,7 @@ export async function startJob(jobId, { resumed = false } = {}) {
   });
 
   child.on('error', async (err) => {
+    if (idleTimer) clearTimeout(idleTimer);
     running.delete(jobId);
     await failJob(jobId, `起動失敗: ${err.message} (ホストで ${cmd} に login 済みか確認)`);
     assistantMsg.text = assistantText || `起動できませんでした: ${err.message}`;
@@ -330,6 +348,33 @@ async function escalateMidRun(jobId, hits, evidence) {
   emit('job_update', { job });
   pushSoon(job, 'awaiting_approval');
   emit('approval_request', { job, threadId: job.threadId, projectId: job.projectId });
+}
+
+async function timeoutJob(jobId, idleMs) {
+  const job = getJob(jobId);
+  if (!job || job.status !== 'running') return;
+  interruptChild(jobId);
+  appendJobLog(jobId, `[relay] timeout: ${idleMs}ms 無応答のため強制終了`);
+  job.status = 'error';
+  job.error = `ハーネスが無応答のため強制終了しました (${Math.round(idleMs / 1000)}秒間応答なし)`;
+  job.updatedAt = Date.now();
+  job.endedAt = Date.now();
+  saveJob(job);
+  const msg = listMessages(job.threadId).find((m) => m.id === job.assistantMessageId);
+  if (msg) {
+    msg.streaming = false;
+    msg.text = `${msg.text}\n\n(無応答のため強制終了しました。「再開」で続けられます)\n`;
+    updateMessage(job.threadId, msg);
+    emit('message_append', {
+      threadId: job.threadId,
+      messageId: msg.id,
+      text: msg.text,
+      streaming: false,
+    });
+  }
+  emit('job_update', { job });
+  pushSoon(job, 'error');
+  await publishDiff(job.projectId);
 }
 
 function interruptChild(jobId) {

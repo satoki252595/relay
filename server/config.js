@@ -41,6 +41,9 @@ export const EXECUTION_TARGETS = [
 ];
 export const PLAN = { execution: 'local' };
 
+// ハーネス子プロセスが無応答 (stdout/stderr が一定時間止まる) の場合に kill するまでの猶予。
+export const HARNESS_IDLE_TIMEOUT_MS = Number(process.env.HARNESS_IDLE_TIMEOUT_MS || 10 * 60 * 1000);
+
 // APNs 完了通知 (未設定なら通知なしで動作)。開発ビルドの検証時は APNS_PRODUCTION=0。
 export const APNS_KEY_PATH = process.env.APNS_KEY_P8 || '';
 export const APNS_KEY_ID = process.env.APNS_KEY_ID || '';
