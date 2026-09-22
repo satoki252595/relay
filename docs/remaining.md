@@ -28,8 +28,6 @@
 - [ ] **完了通知の実機検証**: 実装済み (APNs 直送+タップ遷移)。
   残り: (a) APNs キー発行 (人手・ポータル) (b) App ID に Push 能力付与 (人手) (c) プロファイル再生成→build 2
   アップロード→バックグラウンド受信検証
-- [ ] **QR スキャンペアリング**: 現状は URL+トークン手入力。orca は QR 読取。
-  採用するなら Capacitor Camera + QR 読取プラグインと使用目的文言が必要
 
 ## 堅牢性・仕上げ
 
@@ -39,6 +37,10 @@
 
 ## 対応済み (記録)
 
+- QR スキャンペアリング (C-5): `@capacitor/barcode-scanner` (Apple Vision) で Mac アプリのペアリング QR を読み取り、
+  URL・トークンを入れて接続診断つきで接続。NSCameraUsageDescription 追加 (2026-09-23)
+- APNs のネイティブ配線漏れを修正: `aps-environment` entitlement と AppDelegate のトークン転送が無く、
+  build 1 ではデバイストークン登録が完了しない状態だった。build 番号を 2 に (2026-09-23)
 - 接続診断 (C-1): 接続時に URL 形式→到達性→Relay サーバーか→トークンを順に判定し、
   チェックリストと確認ポイントを表示 (`public/diagnose.js`)。ブラウザで各経路を確認済み (2026-09-23)
 - 応答テキストのノイズ除去 (C-3): stderr・hook 応答 `{}`・プロンプト反響・thinking・部分出力と確定文の重複を除去。

@@ -63,7 +63,8 @@ npm run desktop:dist    # 署名+公証つき DMG/ZIP (要: Developer ID 証明�
 ```
 
 - メニュー / サイドバーの「iPhone と接続」から QR (LAN URL＋トークン) を表示。
-  iPhone は同じ Wi-Fi から手入力で接続 (外出先は Tailscale 経由)。
+  iPhone アプリの「QR を読み取って接続」で読み取れば URL とトークンが入り、そのまま接続する
+  (手入力も可。外出先は Tailscale 経由)。
 - データ・プロジェクトは `~/Library/Application Support/Relay/` 配下。
   公式 CLI はログインシェルの PATH で検出する。
 - 未署名のローカル確認ビルド:

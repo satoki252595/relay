@@ -36,6 +36,7 @@
     <symbol id="i-stop" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></symbol>
     <symbol id="i-rewind" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.6-6.3M3 4v5h5"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v.01M14 21h3M21 17v4h-4"/></symbol>
     <symbol id="i-logo" viewBox="0 0 48 48"><rect x="2" y="2" width="44" height="44" rx="12" fill="#1c2742"/><path d="M10 13a5 5 0 0 1 5-5h18a5 5 0 0 1 5 5v11a5 5 0 0 1-5 5H20l-6 6v-6h-4a5 5 0 0 1-5-5z" fill="#5b8cff"/><path d="M20 15v10M20 15h5a3 3 0 0 1 0 6h-5M23 21l4 4" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
   </defs>
 </svg>
@@ -56,6 +57,7 @@
           <button id="connect-peek" class="icon-btn" aria-label="トークン表示切替"><svg><use href="#i-eye"/></svg></button>
         </span>
       </label>
+      <button id="connect-scan" class="btn big hidden"><svg><use href="#i-qr"/></svg>QR を読み取って接続</button>
       <button id="connect-go" class="btn primary big">接続する</button>
       <button id="connect-demo" class="btn dashed">デモを見る (サーバー不要)</button>
       <p id="connect-err" class="err" role="alert"></p>
@@ -179,6 +181,7 @@
   <div id="toasts" class="toasts" aria-live="assertive"></div>
 </div>
 <script src="diagnose.js"></script>
+<script src="pairing.js"></script>
 <script src="demo.js"></script>
 <script src="app.js"></script>
 <script>

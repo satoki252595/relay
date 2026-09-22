@@ -222,6 +222,47 @@ async function connect() {
   }
 }
 
+/* ============ QR ペアリング (ネイティブのみ) ============ */
+function qrScanner() {
+  if (!window.Capacitor?.isNativePlatform?.()) return null;
+  return window.Capacitor.Plugins?.CapacitorBarcodeScanner || null;
+}
+
+async function scanPairing() {
+  const scanner = qrScanner();
+  if (!scanner) return;
+  $('connect-err').textContent = '';
+  $('connect-diag').innerHTML = '';
+  let text;
+  try {
+    const r = await scanner.scanBarcode({
+      hint: 0, // QR_CODE
+      scanInstructions: 'Mac の Relay ペアリング画面の QR を枠に合わせてください',
+      scanButton: false,
+      scanText: '',
+      cameraDirection: 1, // BACK
+      scanOrientation: 1, // PORTRAIT
+    });
+    text = r?.ScanResult;
+  } catch (err) {
+    const code = String(err?.code || '');
+    if (code.endsWith('BARC-0006')) return; // 利用者がキャンセル
+    $('connect-err').textContent = code.endsWith('BARC-0007')
+      ? 'カメラへのアクセスが許可されていません。設定アプリ > Relay > カメラ をオンにしてください'
+      : 'QR を読み取れませんでした。URL とトークンを手入力することもできます';
+    return;
+  }
+  try {
+    const { url, token } = window.RelayPairing.parsePairing(text);
+    $('connect-url').value = url;
+    $('connect-token').value = token;
+  } catch (err) {
+    $('connect-err').textContent = String(err.message || err);
+    return;
+  }
+  await connect();
+}
+
 function renderDiag({ checks, hints }) {
   const rows = checks
     .map((c) => `<li class="${c.ok ? 'ok' : 'ng'}"><span>${c.ok ? '✓' : '✗'}</span>${esc(c.label)}</li>`)
@@ -1192,10 +1233,14 @@ function placeJump() {
 
 /* ============ 配線 ============ */
 function init() {
-  $('connect-url').value = state.base === location.origin && location.protocol.startsWith('http') ? '' : state.base;
-  if (!$('connect-url').value && location.protocol.startsWith('http')) $('connect-url').value = location.origin;
+  // ネイティブでは origin が capacitor://localhost になるため、http(s) の保存値だけ出す
+  $('connect-url').value = /^https?:/.test(state.base) ? state.base : '';
   $('connect-token').value = state.token;
   $('connect-go').onclick = connect;
+  if (qrScanner()) {
+    $('connect-scan').classList.remove('hidden');
+    $('connect-scan').onclick = scanPairing;
+  }
   $('connect-demo').onclick = enterDemo;
   $('demo-exit').onclick = disconnect;
   $('connect-token').addEventListener('keydown', (e) => { if (e.key === 'Enter') connect(); });
