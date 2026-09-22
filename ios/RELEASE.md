@@ -26,7 +26,7 @@
 
 ```sh
 cd /Users/satoki252595/projects/relay
-npm test                                  # 21/21 緑を確認
+npm test                                  # 全件緑を確認
 node ops/make-ios-assets.mjs              # 念のため再生成
 npx cap sync ios                          # public/ → ios 配下へ同期
 git status --short                        # 空 (クリーンツリー) を確認
