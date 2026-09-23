@@ -2,19 +2,15 @@
 
 このファイルが正です。終わったら消すこと。
 
-## 審査提出 (build 2 で提出する。エージェント代行、以下は人手が必要な前提)
+## 審査提出 (build 2)
 
-- [ ] Chrome で developer.apple.com / appstoreconnect.apple.com にサインイン (人手)
-- [ ] APNs キー発行 → サーバー .env 設定、App Store Connect API の Issuer ID 取得
-- [ ] build 2 archive → upload → TestFlight 処理待ち
-- [ ] 審査動画: シミュレータ録画で代替 (実機 iPhone 未接続のため)
-
-## 審査提出前 (旧: 人手のみ)
-
-- [ ] TestFlight で build 1 を iPhone に導入し一通り操作
-- [ ] 審査用画面収録 1〜2 分 (デモモード→指示→diff→承認) を用意
-- [ ] 受領後に審査メモ確定・添付・提出前ゼロ差分確認 (`~/relay-evidence/review-notes-draft.txt`)
-- [ ] 提出 (IDFA=不使用、連絡先入力) ※提出ボタンは人のみ
+- [x] APNs キー発行 (Key ID U8ZYLB4JZV、.p8 は ~/.private)・App ID に Push・App Store プロファイル再生成
+- [x] build 2 upload (b501514) → VALID、審査対象バージョン 1.0 に紐づけ済み
+- [x] 実機 iPhone 16e (iOS 26.6.1) で接続・通知トークン登録・APNs 送信 (200) を確認
+- [x] 審査動画 `~/relay-evidence/build2/relay-review-build2.mp4`、審査メモ `~/relay-evidence/build2/review-notes.txt`
+- [x] プライバシーポリシー URL を設定 (GitHub の ops/legal/privacy-policy.md)
+- [ ] 審査連絡先 (氏名・電話・メール) 入力、審査メモ・動画添付
+- [ ] 提出 (提出直前に人の最終確認)
 
 ## 後片付け
 
