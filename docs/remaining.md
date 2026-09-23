@@ -2,14 +2,17 @@
 
 このファイルが正です。終わったら消すこと。
 
-## 審査提出 (build 2)
+## 審査提出 (build 3 で提出。iPhone 専用化・掲載情報刷新)
 
 - [x] APNs キー発行 (Key ID U8ZYLB4JZV、.p8 は ~/.private)・App ID に Push・App Store プロファイル再生成
 - [x] build 2 upload (b501514) → VALID、審査対象バージョン 1.0 に紐づけ済み
 - [x] 実機 iPhone 16e (iOS 26.6.1) で接続・通知トークン登録・APNs 送信 (200) を確認
 - [x] 審査動画 `~/relay-evidence/build2/relay-review-build2.mp4`、審査メモ `~/relay-evidence/build2/review-notes.txt`
 - [x] プライバシーポリシー URL を設定 (GitHub の ops/legal/privacy-policy.md)
-- [ ] 審査連絡先 (氏名・電話・メール) 入力、審査メモ・動画添付
+- [x] 審査連絡先入力
+- [ ] build 3 (iPhone 専用・アプリ内の「VM実行(有料)準備中」表記削除) upload → 選択
+- [ ] ストア掲載: スクショ4枚 (6.9")・説明文/キーワード/プロモーション刷新・プレビュー動画
+- [ ] TestFlight build 3 を実機に導入し、人の操作で審査動画を撮影 → complete stage preflight → 審査メモ・動画差し替え
 - [ ] 提出 (提出直前に人の最終確認)
 
 ## 後片付け

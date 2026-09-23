@@ -1,6 +1,8 @@
 # Relay iOS リリース手順書 (App Store)
 
-`release-ios-app-store` skill の証拠ゲートに沿って進める。
+`release-ios-app-store` skill の証拠ゲートに沿って進める (実体は private リポジトリ mySKILLS の
+`~/projects/skills/release-ios-app-store`。Claude Code / Codex の両方から symlink で参照)。
+**着手前に必ず skill を起動して SKILL.md と references を読むこと。**
 本書は Relay 固有の値・コマンドを固定する。skill 本文の手順が正。
 
 ## 0. リリース身元 (固定)
@@ -79,7 +81,8 @@ xcodebuild -workspace ios/App/App.xcworkspace -scheme App \
 xcrun simctl io booted screenshot shot-connect.png
 ```
 
-必要枠: iPhone 6.9 インチ (1320×2868)、iPad 13 インチ (2064×2752)。
+必要枠: iPhone 6.9 インチ (1320×2868)。build 3 から iPhone 専用 (`TARGETED_DEVICE_FAMILY = 1`) のため iPad 枠は不要。
+iPad 対応に戻す場合は iPad 13 インチ (2064×2752) が必須。
 小さい枠は Connect の自動縮小を利用。撮影対象: 接続→デモ→
 チャット→承認→diff の 3〜5 枚。
 

@@ -3,7 +3,7 @@
   "repo": "__REPO__",
   "release": {
     "version": "1.0.0",
-    "build": "2",
+    "build": "3",
     "bundle_id": "dev.relay.agentchat",
     "team_id": "QVUR5T7J46",
     "operation": "first_release",
@@ -58,15 +58,14 @@
         "LSRequiresIPhoneOS": "true; iOS-only app, cannot run on other platforms.",
         "MinimumOSVersion": "15.0; Xcode 27 minimum deployment-target floor.",
         "NSAppTransportSecurity": "NSAllowsLocalNetworking only, for cleartext HTTP to the paired Mac/PC relay server on LAN; no arbitrary loads.",
-        "UIDeviceFamily": "1 and 2; universal iPhone plus iPad build from the Capacitor template.",
+        "UIDeviceFamily": "1 only; iPhone-only app (runs on iPad in iPhone compatibility mode).",
         "UILaunchStoryboardName": "LaunchScreen storyboard from the Capacitor Xcode template.",
         "UIMainStoryboardFile": "Main storyboard from the Capacitor Xcode template.",
         "UIRequiredDeviceCapabilities": "arm64 only; matches the single shipped architecture.",
         "UISupportedInterfaceOrientations": "portrait plus both landscapes on iPhone.",
-        "UISupportedInterfaceOrientations~ipad": "all four orientations on iPad.",
         "UIViewControllerBasedStatusBarAppearance": "true; Capacitor default status-bar behavior."
       },
-      "policy_reason": "Relay 1.0.0 (2) has no extensions and no background modes. Entitlements: aps-environment only (job completion push via APNs). Usage descriptions: camera only (pairing QR scan). Closed-world Info/entitlement values are cross-checked against the signed IPA at binary stage."
+      "policy_reason": "Relay 1.0.0 (3) has no extensions and no background modes. Entitlements: aps-environment only (job completion push via APNs). Usage descriptions: camera only (pairing QR scan). Closed-world Info/entitlement values are cross-checked against the signed IPA at binary stage."
     }
   ],
   "provenance": {
